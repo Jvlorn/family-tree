@@ -6,149 +6,94 @@
 <title>Family Tree</title>
 <link rel="stylesheet" href="shared.css"/>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/family-chart@0.1.2/family-chart.js"></script>
 <script src="config.js"></script>
 <script src="shared.js"></script>
 <style>
-  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  body { height:100vh; overflow:hidden; }
 
-  .toolbar {
-    background: var(--warm-white);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 40px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    flex-shrink: 0;
-  }
-  .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
-  .search-wrap input {
-    width: 100%; padding: 8px 14px 8px 36px;
-    border: 1px solid var(--border); border-radius: 4px;
-    font-family: 'Lato', sans-serif; font-size: 14px;
-    background: white; color: var(--text-dark); outline: none;
-    transition: border-color 0.2s;
-  }
-  .search-wrap input:focus { border-color: var(--brown-mid); }
-  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 16px; pointer-events: none; }
-  .toolbar-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); }
-  .gen-filters { display: flex; gap: 6px; flex-wrap: wrap; }
-  .gen-btn {
-    padding: 5px 13px; border: 1px solid var(--border); border-radius: 20px;
-    font-size: 12px; font-weight: 700; background: white; color: var(--text-mid);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .gen-btn.active, .gen-btn:hover { background: var(--brown-dark); color: var(--gold-light); border-color: var(--brown-dark); }
-  .member-count { margin-left: auto; font-size: 13px; color: var(--text-light); }
-  .member-count span { font-weight: 700; color: var(--text-mid); }
+  .toolbar { background:var(--warm-white); border-bottom:1px solid var(--border); padding:10px 36px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex-shrink:0; }
+  .search-wrap { position:relative; flex:1; min-width:180px; max-width:320px; }
+  .search-wrap input { width:100%; padding:8px 12px 8px 34px; border:1px solid var(--border); border-radius:4px; font-family:'Lato',sans-serif; font-size:13px; background:white; color:var(--text-dark); outline:none; transition:border-color .2s; }
+  .search-wrap input:focus { border-color:var(--brown-mid); }
+  .search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-light); font-size:15px; pointer-events:none; }
+  .toolbar-label { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-light); }
+  .gen-filters { display:flex; gap:5px; flex-wrap:wrap; }
+  .gen-btn { padding:5px 12px; border:1px solid var(--border); border-radius:20px; font-size:11px; font-weight:700; background:white; color:var(--text-mid); cursor:pointer; transition:all .2s; }
+  .gen-btn.active, .gen-btn:hover { background:var(--brown-dark); color:var(--gold-light); border-color:var(--brown-dark); }
+  .member-count { margin-left:auto; font-size:12px; color:var(--text-light); }
+  .member-count span { font-weight:700; color:var(--text-mid); }
 
-  #tree-container {
-    flex: 1; overflow: hidden; position: relative;
-    background-color: var(--cream);
-    background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
-    background-size: 28px 28px;
-  }
-  #tree-svg { width: 100%; height: 100%; }
+  #tree-container { flex:1; overflow:auto; position:relative; background-color:var(--cream); background-image:radial-gradient(circle at 1px 1px,var(--border) 1px,transparent 0); background-size:28px 28px; }
 
-  .state-overlay {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 14px;
-    pointer-events: none;
-  }
-  .state-overlay.hidden { display: none; }
-  .state-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text-mid); }
-  .state-sub { font-size: 14px; color: var(--text-light); text-align: center; max-width: 300px; line-height: 1.6; }
+  /* ── Grid fallback tree (always used for reliability) ── */
+  .tree-grid { display:flex; flex-direction:column; gap:0; padding:40px; min-width:max-content; }
+  .gen-row { display:flex; gap:16px; justify-content:center; padding:20px 0; position:relative; }
+  .gen-label { position:absolute; left:0; top:50%; transform:translateY(-50%); font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-light); writing-mode:vertical-rl; }
+
+  .node-card { width:160px; background:white; border:1px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; transition:box-shadow .2s,transform .15s; flex-shrink:0; }
+  .node-card:hover { box-shadow:0 6px 20px rgba(44,24,16,.14); transform:translateY(-2px); }
+  .node-card.is-deceased { opacity:.85; }
+  .node-photo { width:100%; height:100px; object-fit:cover; display:block; background:linear-gradient(135deg,var(--brown-pale),var(--green-pale)); }
+  .node-photo-placeholder { width:100%; height:100px; background:linear-gradient(135deg,var(--brown-pale),var(--green-pale)); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:32px; color:var(--brown-light); }
+  .node-body { padding:10px; }
+  .node-name { font-family:'Playfair Display',serif; font-size:13px; color:var(--text-dark); line-height:1.3; word-break:break-word; }
+  .node-sub { font-size:10px; color:var(--text-light); margin-top:3px; line-height:1.4; }
+  .node-badge { display:inline-block; margin-top:5px; padding:2px 7px; border-radius:10px; font-size:9px; font-weight:700; text-transform:uppercase; }
+  .node-badge.deceased { background:#f1f5f9; color:#475569; }
+
+  /* Connector lines between generations */
+  .gen-connector { height:32px; display:flex; align-items:center; justify-content:center; }
+  .gen-connector-line { width:2px; height:100%; background:var(--border); }
+
+  /* State overlays */
+  .state-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+  .state-overlay.hidden { display:none; }
+  .state-title { font-family:'Playfair Display',serif; font-size:22px; color:var(--text-mid); }
+  .state-sub { font-size:14px; color:var(--text-light); text-align:center; max-width:300px; line-height:1.6; }
+
+  /* Unlinked bar */
+  .unlinked-bar { background:var(--warm-white); border-top:1px solid var(--border); padding:14px 36px; flex-shrink:0; }
+  .unlinked-bar-title { font-family:'Playfair Display',serif; font-size:13px; color:var(--text-mid); margin-bottom:8px; }
+  .unlinked-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .unlinked-chip { padding:4px 12px; background:white; border:1px solid var(--border); border-radius:20px; font-size:12px; color:var(--text-mid); cursor:pointer; transition:all .2s; }
+  .unlinked-chip:hover { background:var(--brown-dark); color:var(--gold-light); border-color:var(--brown-dark); }
 
   /* Detail panel */
-  .detail-panel {
-    position: absolute; top: 20px; right: 20px; width: 300px;
-    background: white; border: 1px solid var(--border); border-radius: 8px;
-    box-shadow: var(--shadow); overflow: hidden;
-    transform: translateX(340px); transition: transform 0.3s ease; z-index: 100;
-  }
-  .detail-panel.open { transform: translateX(0); }
-  .detail-photo-wrap { position: relative; }
-  .detail-photo { width: 100%; height: 170px; object-fit: cover; display: block; }
-  .detail-photo-placeholder {
-    width: 100%; height: 170px;
-    background: linear-gradient(135deg, var(--brown-pale), var(--green-pale));
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Playfair Display', serif; font-size: 52px; color: var(--brown-light);
-  }
-  .detail-close {
-    position: absolute; top: 8px; right: 8px;
-    width: 28px; height: 28px; background: rgba(0,0,0,0.45); color: white;
-    border: none; border-radius: 50%; font-size: 16px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .detail-body { padding: 18px; }
-  .detail-name { font-family: 'Playfair Display', serif; font-size: 19px; color: var(--text-dark); line-height: 1.2; }
-  .detail-nickname { font-size: 13px; color: var(--text-light); font-style: italic; margin-top: 2px; }
-  .detail-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-  .detail-meta { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
-  .detail-row { display: flex; gap: 8px; font-size: 13px; }
-  .detail-row-label { font-weight: 700; color: var(--text-light); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; min-width: 72px; padding-top: 1px; }
-  .detail-row-value { color: var(--text-mid); line-height: 1.5; word-break: break-word; }
-  .detail-bio { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-mid); line-height: 1.7; }
-  .detail-social { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
-  .detail-social a { font-size: 12px; color: var(--brown-mid); text-decoration: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 12px; transition: all 0.2s; }
-  .detail-social a:hover { background: var(--brown-dark); color: var(--gold-light); border-color: var(--brown-dark); }
-  .detail-actions { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-
-  /* Unlinked section */
-  .unlinked-bar { background: var(--warm-white); border-top: 1px solid var(--border); padding: 16px 40px; flex-shrink: 0; }
-  .unlinked-title { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--text-mid); margin-bottom: 10px; }
-  .unlinked-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-  .unlinked-chip {
-    padding: 5px 14px; background: white; border: 1px solid var(--border);
-    border-radius: 20px; font-size: 13px; color: var(--text-mid); cursor: pointer; transition: all 0.2s;
-  }
-  .unlinked-chip:hover { background: var(--brown-dark); color: var(--gold-light); border-color: var(--brown-dark); }
+  .detail-panel { position:fixed; top:0; right:0; width:310px; height:100vh; background:white; border-left:1px solid var(--border); box-shadow:-4px 0 24px rgba(44,24,16,.1); overflow-y:auto; transform:translateX(320px); transition:transform .3s ease; z-index:200; display:flex; flex-direction:column; }
+  .detail-panel.open { transform:translateX(0); }
+  .detail-photo { width:100%; height:180px; object-fit:cover; display:block; }
+  .detail-photo-placeholder { width:100%; height:180px; background:linear-gradient(135deg,var(--brown-pale),var(--green-pale)); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:56px; color:var(--brown-light); }
+  .detail-close { position:absolute; top:10px; right:10px; width:28px; height:28px; background:rgba(0,0,0,.45); color:white; border:none; border-radius:50%; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }
+  .detail-body { padding:18px; flex:1; }
+  .detail-name { font-family:'Playfair Display',serif; font-size:20px; color:var(--text-dark); line-height:1.2; }
+  .detail-nick { font-size:13px; color:var(--text-light); font-style:italic; margin-top:2px; }
+  .detail-badges { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .detail-meta { margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .d-row { display:flex; gap:8px; font-size:13px; }
+  .d-label { font-weight:700; color:var(--text-light); text-transform:uppercase; font-size:10px; letter-spacing:1px; min-width:68px; padding-top:2px; flex-shrink:0; }
+  .d-val { color:var(--text-mid); line-height:1.5; word-break:break-word; }
+  .detail-bio { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:13px; color:var(--text-mid); line-height:1.7; }
+  .detail-social { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .detail-social a { font-size:11px; color:var(--brown-mid); text-decoration:none; border:1px solid var(--border); padding:4px 10px; border-radius:12px; transition:all .2s; }
+  .detail-social a:hover { background:var(--brown-dark); color:var(--gold-light); border-color:var(--brown-dark); }
+  .detail-actions { padding:14px 18px; border-top:1px solid var(--border); display:flex; gap:7px; flex-wrap:wrap; }
 
   /* Zoom */
-  .zoom-controls { position: absolute; bottom: 20px; left: 20px; display: flex; flex-direction: column; gap: 4px; z-index: 50; }
-  .zoom-btn {
-    width: 34px; height: 34px; background: white; border: 1px solid var(--border);
-    border-radius: 4px; font-size: 17px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; color: var(--text-mid);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: all 0.15s;
-  }
-  .zoom-btn:hover { background: var(--brown-dark); color: var(--gold-light); }
+  .zoom-controls { position:fixed; bottom:20px; left:20px; display:flex; flex-direction:column; gap:4px; z-index:100; }
+  .zoom-btn { width:32px; height:32px; background:white; border:1px solid var(--border); border-radius:4px; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-mid); box-shadow:0 2px 8px rgba(0,0,0,.07); transition:all .15s; }
+  .zoom-btn:hover { background:var(--brown-dark); color:var(--gold-light); }
 
-  /* Request edit modal */
-  .modal-backdrop {
-    display: none; position: fixed; inset: 0;
-    background: rgba(44,24,16,0.5); z-index: 500;
-    align-items: center; justify-content: center; padding: 20px;
-  }
-  .modal-backdrop.open { display: flex; }
-  .modal {
-    background: white; border-radius: 10px; width: 100%;
-    max-width: 560px; max-height: 88vh; overflow-y: auto;
-    padding: 32px; position: relative;
-  }
-  .modal-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--brown-dark); margin-bottom: 6px; }
-  .modal-sub { font-size: 13px; color: var(--text-light); margin-bottom: 24px; line-height: 1.5; }
-  .modal-close { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; background: var(--cream); border: 1px solid var(--border); border-radius: 50%; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .diff-row { display: grid; grid-template-columns: 120px 1fr 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--cream); font-size: 13px; align-items: start; }
-  .diff-label { font-weight: 700; color: var(--text-light); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding-top: 2px; }
-  .diff-old { color: var(--text-light); text-decoration: line-through; }
-  .diff-new { color: var(--green-deep); font-weight: 700; }
-  .modal-footer { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
-
-  @media (max-width: 600px) {
-    .toolbar { padding: 10px 16px; }
-    .detail-panel { width: calc(100vw - 32px); right: 16px; }
-    .unlinked-bar { padding: 14px 16px; }
+  @media (max-width:600px) {
+    .toolbar { padding:8px 14px; }
+    .detail-panel { width:100vw; }
+    .unlinked-bar { padding:12px 14px; }
   }
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <div class="logo">
+  <div>
     <div class="logo-title" id="site-title"></div>
     <div class="logo-sub" id="site-tagline"></div>
   </div>
@@ -157,6 +102,8 @@
     <a href="admin.html" class="btn btn-outline">Admin</a>
   </div>
 </header>
+
+<div class="user-bar" id="user-bar" style="display:none"></div>
 
 <div class="toolbar">
   <div class="search-wrap">
@@ -175,19 +122,14 @@
   </div>
   <div class="state-overlay hidden" id="empty-state">
     <div class="state-title">No members yet</div>
-    <div class="state-sub">Once the admin approves submissions, the family tree will appear here.</div>
+    <div class="state-sub">Once the admin approves submissions, the tree will appear here.</div>
   </div>
-  <div id="tree-svg"></div>
-  <div class="zoom-controls">
-    <button class="zoom-btn" onclick="zoomIn()">+</button>
-    <button class="zoom-btn" onclick="zoomReset()">⊡</button>
-    <button class="zoom-btn" onclick="zoomOut()">−</button>
-  </div>
+  <div id="tree-render"></div>
 </div>
 
 <div id="unlinked-wrap" style="display:none">
   <div class="unlinked-bar">
-    <div class="unlinked-title">Members with unknown connections</div>
+    <div class="unlinked-bar-title">Members with unknown connections</div>
     <div class="unlinked-chips" id="unlinked-chips"></div>
   </div>
 </div>
@@ -196,13 +138,13 @@
 
 <!-- Detail panel -->
 <div class="detail-panel" id="detail-panel">
-  <div class="detail-photo-wrap">
-    <div id="detail-photo-slot"></div>
+  <div style="position:relative;">
     <button class="detail-close" onclick="closeDetail()">×</button>
+    <div id="d-photo-slot"></div>
   </div>
   <div class="detail-body">
     <div class="detail-name" id="d-name"></div>
-    <div class="detail-nickname" id="d-nickname"></div>
+    <div class="detail-nick" id="d-nick"></div>
     <div class="detail-badges" id="d-badges"></div>
     <div class="detail-meta" id="d-meta"></div>
     <div class="detail-bio" id="d-bio" style="display:none"></div>
@@ -213,13 +155,19 @@
 
 <!-- Edit request modal -->
 <div class="modal-backdrop" id="edit-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeEditModal()">×</button>
+  <div class="modal" style="max-width:640px;">
+    <button class="modal-close" onclick="document.getElementById('edit-modal').classList.remove('open')">×</button>
     <div class="modal-title">Request an Edit</div>
-    <div class="modal-sub" id="edit-modal-sub"></div>
-    <div id="edit-form-fields" class="form-grid"></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:18px;" id="edit-modal-sub"></p>
+    <div class="form-grid" id="edit-form-fields"></div>
+    <div style="margin-top:20px;">
+      <div class="section-title" style="margin-bottom:12px;">Update Connections</div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:12px;line-height:1.6;">Add new connections you'd like linked. Existing connections won't be removed — contact the admin for removals.</p>
+      <div id="edit-conn-list"></div>
+      <button type="button" class="add-conn-btn" onclick="addEditConn()">+ Add connection</button>
+    </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('edit-modal').classList.remove('open')">Cancel</button>
       <button class="btn btn-dark" onclick="submitEditRequest()">Submit Request</button>
     </div>
   </div>
@@ -228,18 +176,41 @@
 <!-- Delete request modal -->
 <div class="modal-backdrop" id="delete-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeDeleteModal()">×</button>
+    <button class="modal-close" onclick="document.getElementById('delete-modal').classList.remove('open')">×</button>
     <div class="modal-title">Request Removal</div>
-    <div class="modal-sub" id="delete-modal-sub"></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:18px;" id="delete-modal-sub"></p>
     <div class="field">
-      <label>Reason for removal <span class="req">*</span></label>
-      <textarea id="delete-reason" placeholder="Please explain why this person should be removed from the family tree…"></textarea>
+      <label>Reason <span class="req">*</span></label>
+      <textarea id="delete-reason" placeholder="Please explain why this person should be removed…"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('delete-modal').classList.remove('open')">Cancel</button>
       <button class="btn btn-danger" onclick="submitDeleteRequest()">Submit Removal Request</button>
     </div>
   </div>
+</div>
+
+<!-- Report modal -->
+<div class="modal-backdrop" id="report-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('report-modal').classList.remove('open')">×</button>
+    <div class="modal-title">Report an Issue</div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:18px;" id="report-modal-sub"></p>
+    <div class="field">
+      <label>What's the issue? <span class="req">*</span></label>
+      <textarea id="report-reason" placeholder="Describe the bug or problem with this entry…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('report-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-warn" onclick="submitReport()">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" onclick="zoomIn()">+</button>
+  <button class="zoom-btn" onclick="zoomReset()">⊡</button>
+  <button class="zoom-btn" onclick="zoomOut()">−</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -250,18 +221,18 @@ let currentZoom = 1;
 let currentUser = null;
 let activeDetailId = null;
 
-// Set site labels
 document.getElementById('site-title').textContent = SITE_CONFIG.familyName;
 document.getElementById('site-tagline').textContent = SITE_CONFIG.tagline;
 
-// Add invite token to submit link
-const token = new URLSearchParams(location.search).get('token') || '';
-document.getElementById('add-btn').href = 'submit.html' + (token ? '?token=' + token : '');
+// Pass invite token through to submit link
+const urlToken = new URLSearchParams(location.search).get('token') || '';
+document.getElementById('add-btn').href = 'submit.html?token=' + (urlToken || INVITE_TOKEN);
 
 async function init() {
   renderFooter();
   const { data: { session } } = await db.auth.getSession();
   currentUser = session?.user || null;
+  if (currentUser) renderUserBar(currentUser);
   await loadTree();
 }
 
@@ -270,17 +241,17 @@ async function loadTree() {
     const [mRes, rRes, marRes] = await Promise.all([
       db.from('family_members').select('*').eq('approved', true).eq('is_private', false),
       db.from('relationships').select('*').eq('approved', true).eq('is_visible', true),
-      db.from('marriages').select('*').eq('approved', true).eq('is_visible', true)
+      db.from('marriages').select('*').eq('approved', true).eq('is_visible', true),
     ]);
     allMembers = mRes.data || [];
     allRelationships = rRes.data || [];
     allMarriages = marRes.data || [];
-    window._relationships = allRelationships;
+    window._allRelationships = allRelationships;
 
     document.getElementById('loading-state').classList.add('hidden');
     document.getElementById('member-count').textContent = allMembers.length;
 
-    if (allMembers.length === 0) {
+    if (!allMembers.length) {
       document.getElementById('empty-state').classList.remove('hidden');
       return;
     }
@@ -294,6 +265,7 @@ async function loadTree() {
   }
 }
 
+// ── Generation filter ──
 function buildGenFilter() {
   const gens = [...new Set(allMembers.map(m => m.generation_number).filter(Boolean))].sort((a,b)=>a-b);
   const wrap = document.getElementById('gen-filters');
@@ -309,18 +281,14 @@ function buildGenFilter() {
     wrap.appendChild(b);
   });
 }
-
-function setActiveGen(el) {
-  document.querySelectorAll('.gen-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
+function setActiveGen(el) { document.querySelectorAll('.gen-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); }
 
 function filterTree() {
   const q = document.getElementById('search-input').value.toLowerCase();
   const activeGen = document.querySelector('.gen-btn.active');
   const genFilter = activeGen?.dataset?.gen;
-  let filtered = allMembers.filter(m => {
-    const nm = (m.full_name + ' ' + (m.nickname||'')).toLowerCase().includes(q);
+  const filtered = allMembers.filter(m => {
+    const nm = (m.full_name+' '+(m.nickname||'')).toLowerCase().includes(q);
     const gn = !genFilter || String(m.generation_number) === genFilter;
     return nm && gn;
   });
@@ -332,72 +300,107 @@ function filterTree() {
   document.getElementById('member-count').textContent = filtered.length;
 }
 
+// ── Tree rendering ──
 function renderTree(members, relationships, marriages) {
-  const container = document.getElementById('tree-svg');
+  const container = document.getElementById('tree-render');
   container.innerHTML = '';
   const linked = members.filter(m => !m.is_unlinked);
   if (!linked.length) return;
 
-  const data = linked.map(m => {
-    const parents = relationships
-      .filter(r => r.person_b_id === m.id && r.relationship_type === 'parent')
-      .map(r => r.person_a_id);
-    const spouses = marriages
-      .filter(mar => mar.person1_id === m.id || mar.person2_id === m.id)
-      .map(mar => mar.person1_id === m.id ? mar.person2_id : mar.person1_id);
-    const children = relationships
-      .filter(r => r.person_a_id === m.id && r.relationship_type === 'parent')
-      .map(r => r.person_b_id);
-    return {
-      id: m.id,
-      data: {
-        'first name': m.nickname || m.full_name.split(' ')[0],
-        'last name': m.full_name.split(' ').slice(1).join(' '),
-        'birthday': m.hide_birth_date ? '' : (m.birth_date || ''),
-        'avatar': (m.hide_photo ? '' : (m.photo_url || '')),
-        'gender': m.gender || 'unknown',
-      },
-      rels: { father: parents[0]||null, mother: parents[1]||null, spouses, children }
-    };
-  });
+  // Group by generation_number if available, otherwise compute from relationships
+  const byGen = groupByGeneration(linked, relationships);
+  const wrap = document.createElement('div');
+  wrap.className = 'tree-grid';
 
-  try {
-    if (window.f3) {
-      window.f3.createChart('#tree-svg', data)
-        .setCardXSpacing(40).setCardYSpacing(60)
-        .setOrientationVertical().init();
-      document.querySelectorAll('.card').forEach(card => {
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', function() {
-          const id = this.getAttribute('data-id') || this.id;
-          if (id) openDetail(id);
-        });
-      });
-    } else {
-      renderFallback(linked, container);
+  const genNums = Object.keys(byGen).map(Number).sort((a,b)=>a-b);
+  genNums.forEach((g, idx) => {
+    if (idx > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'gen-connector';
+      conn.innerHTML = '<div class="gen-connector-line"></div>';
+      wrap.appendChild(conn);
     }
-  } catch(e) { renderFallback(linked, container); }
-}
-
-function renderFallback(members, container) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
-  const cols = Math.max(1, Math.ceil(Math.sqrt(members.length)));
-  members.forEach((m,i) => {
-    const x = 40 + (i % cols) * 200, y = 40 + Math.floor(i / cols) * 110;
-    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.style.cursor = 'pointer';
-    g.addEventListener('click', () => openDetail(m.id));
-    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    Object.entries({x,y,width:170,height:70,rx:6,fill:'#fff',stroke:'#d4c4b0','stroke-width':1}).forEach(([k,v])=>rect.setAttribute(k,v));
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    Object.entries({x:x+85,y:y+35,'text-anchor':'middle','font-family':'Lato,sans-serif','font-size':'13',fill:'#2c1810'}).forEach(([k,v])=>text.setAttribute(k,v));
-    text.textContent = m.full_name + (m.suffix?' '+m.suffix:'');
-    g.appendChild(rect); g.appendChild(text); svg.appendChild(g);
+    const row = document.createElement('div');
+    row.className = 'gen-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'gen-label';
+    lbl.textContent = genNums.length > 1 ? 'Gen ' + g : '';
+    row.appendChild(lbl);
+    byGen[g].forEach(m => row.appendChild(buildNodeCard(m)));
+    wrap.appendChild(row);
   });
-  container.appendChild(svg);
+
+  container.appendChild(wrap);
 }
 
+function groupByGeneration(members, relationships) {
+  const byGen = {};
+
+  // If members have explicit generation numbers, use those
+  const hasGenNums = members.some(m => m.generation_number);
+  if (hasGenNums) {
+    members.forEach(m => {
+      const g = m.generation_number || 99;
+      if (!byGen[g]) byGen[g] = [];
+      byGen[g].push(m);
+    });
+    return byGen;
+  }
+
+  // Compute generations from parent-child relationships
+  const idToMember = {};
+  members.forEach(m => { idToMember[m.id] = m; });
+  const genMap = {};
+  const memberIds = new Set(members.map(m => m.id));
+
+  // Find roots (no parents in this set)
+  const hasParent = new Set(
+    relationships.filter(r => r.relationship_type === 'parent' && memberIds.has(r.person_a_id) && memberIds.has(r.person_b_id)).map(r => r.person_b_id)
+  );
+  const roots = members.filter(m => !hasParent.has(m.id));
+  const queue = roots.map(m => ({ id: m.id, gen: 1 }));
+  const visited = new Set();
+
+  while (queue.length) {
+    const { id, gen } = queue.shift();
+    if (visited.has(id)) continue;
+    visited.add(id);
+    genMap[id] = gen;
+    // Children
+    relationships.filter(r => r.relationship_type === 'parent' && r.person_a_id === id && memberIds.has(r.person_b_id))
+      .forEach(r => { if (!visited.has(r.person_b_id)) queue.push({ id: r.person_b_id, gen: gen + 1 }); });
+  }
+  // Unvisited members go to gen 1
+  members.forEach(m => { if (!genMap[m.id]) genMap[m.id] = 1; });
+  members.forEach(m => {
+    const g = genMap[m.id];
+    if (!byGen[g]) byGen[g] = [];
+    byGen[g].push(m);
+  });
+  return byGen;
+}
+
+function buildNodeCard(m) {
+  const card = document.createElement('div');
+  card.className = 'node-card' + (!m.is_living ? ' is-deceased' : '');
+  card.onclick = () => openDetail(m.id);
+
+  if (m.photo_url && !m.hide_photo) {
+    card.innerHTML = `<img class="node-photo" src="${escHtml(m.photo_url)}" alt="${escHtml(m.full_name)}" onerror="this.outerHTML='<div class=node-photo-placeholder>${initials(m.full_name)}</div>'"/>`;
+  } else {
+    card.innerHTML = `<div class="node-photo-placeholder">${initials(m.full_name)}</div>`;
+  }
+
+  const body = document.createElement('div');
+  body.className = 'node-body';
+  body.innerHTML = `<div class="node-name">${escHtml(m.full_name)}${m.suffix?' <span style="font-size:10px;color:var(--text-light);">'+escHtml(m.suffix)+'</span>':''}</div>
+    <div class="node-sub">${m.nickname?'"'+escHtml(m.nickname)+'" · ':''}${!m.hide_birth_date&&m.birth_date?formatDate(m.birth_date):''}</div>
+    ${!m.is_living?'<span class="node-badge deceased">Deceased</span>':''}`;
+  card.appendChild(body);
+  return card;
+}
+
+// ── Unlinked ──
 function renderUnlinked() {
   const unlinked = allMembers.filter(m => m.is_unlinked);
   const wrap = document.getElementById('unlinked-wrap');
@@ -414,83 +417,109 @@ function renderUnlinked() {
   });
 }
 
+// ── Detail panel ──
 function openDetail(id) {
   const m = allMembers.find(x => x.id === id);
   if (!m) return;
   activeDetailId = id;
 
   // Photo
-  const slot = document.getElementById('detail-photo-slot');
-  if (m.photo_url && !m.hide_photo) {
-    slot.innerHTML = `<img class="detail-photo" src="${m.photo_url}" alt="${escHtml(m.full_name)}" onerror="this.style.display='none'"/>`;
-  } else {
-    slot.innerHTML = `<div class="detail-photo-placeholder">${initials(m.full_name)}</div>`;
-  }
+  const slot = document.getElementById('d-photo-slot');
+  slot.innerHTML = m.photo_url && !m.hide_photo
+    ? `<img class="detail-photo" src="${escHtml(m.photo_url)}" alt="${escHtml(m.full_name)}" onerror="this.outerHTML='<div class=detail-photo-placeholder>${initials(m.full_name)}</div>'"/>`
+    : `<div class="detail-photo-placeholder">${initials(m.full_name)}</div>`;
 
-  document.getElementById('d-name').textContent = m.full_name + (m.suffix?' '+m.suffix:'');
-  const nick = document.getElementById('d-nickname');
+  document.getElementById('d-name').textContent = m.full_name + (m.suffix ? ' '+m.suffix : '');
+  const nick = document.getElementById('d-nick');
   nick.textContent = m.nickname ? `"${m.nickname}"` : '';
   nick.style.display = m.nickname ? 'block' : 'none';
 
   // Badges
   const badges = document.getElementById('d-badges');
   badges.innerHTML = '';
-  if (!m.is_living) badges.innerHTML += `<span class="badge badge-deceased">Deceased</span>`;
-  if (m.is_unlinked) badges.innerHTML += `<span class="badge badge-pending">Unlinked</span>`;
+  if (!m.is_living) badges.innerHTML += '<span class="badge badge-deceased">Deceased</span>';
+  if (m.is_unlinked) badges.innerHTML += '<span class="badge badge-pending">Unlinked</span>';
 
-  // Meta rows
+  // Meta — bidirectional relationship lookup
   const meta = document.getElementById('d-meta');
   meta.innerHTML = '';
-  const rows = [
-    ['Born', !m.hide_birth_date && m.birth_date ? formatDate(m.birth_date) : null],
-    ['Birthplace', !m.hide_birth_place && m.birth_place ? m.birth_place : null],
-    ['Passed', !m.is_living && m.death_date ? formatDate(m.death_date) : null],
-  ];
-  rows.forEach(([l,v]) => {
-    if (!v) return;
-    meta.innerHTML += `<div class="detail-row"><div class="detail-row-label">${l}</div><div class="detail-row-value">${escHtml(v)}</div></div>`;
-  });
+  const addRow = (label, val) => {
+    if (!val) return;
+    meta.innerHTML += `<div class="d-row"><div class="d-label">${label}</div><div class="d-val">${escHtml(val)}</div></div>`;
+  };
 
-  // Find parents via relationships
-  const parentIds = allRelationships.filter(r => r.person_b_id === m.id && r.relationship_type === 'parent').map(r => r.person_a_id);
-  const parentNames = parentIds.map(pid => allMembers.find(x=>x.id===pid)?.full_name).filter(Boolean);
-  if (parentNames.length) {
-    meta.innerHTML += `<div class="detail-row"><div class="detail-row-label">Parents</div><div class="detail-row-value">${escHtml(parentNames.join(' & '))}</div></div>`;
+  if (!m.hide_birth_date && m.birth_date) addRow('Born', formatDate(m.birth_date));
+  if (!m.hide_birth_place && m.birth_place) addRow('Birthplace', m.birth_place);
+  if (!m.is_living && m.death_date) addRow('Passed', formatDate(m.death_date));
+
+  // Parents: look for rels where person_b_id = m.id AND type = parent
+  const parentIds = allRelationships
+    .filter(r => r.person_b_id === m.id && r.relationship_type === 'parent')
+    .map(r => r.person_a_id);
+  const parentNames = parentIds.map(pid => allMembers.find(x => x.id === pid)?.full_name).filter(Boolean);
+  if (parentNames.length) addRow('Parents', parentNames.join(' & '));
+
+  // Children: look for rels where person_a_id = m.id AND type = parent
+  const childIds = allRelationships
+    .filter(r => r.person_a_id === m.id && r.relationship_type === 'parent')
+    .map(r => r.person_b_id);
+  const childNames = childIds.map(cid => allMembers.find(x => x.id === cid)?.full_name).filter(Boolean);
+  if (childNames.length) addRow('Children', childNames.join(', '));
+
+  // Siblings: share at least one parent
+  if (parentIds.length) {
+    const siblingIds = allRelationships
+      .filter(r => parentIds.includes(r.person_a_id) && r.relationship_type === 'parent' && r.person_b_id !== m.id)
+      .map(r => r.person_b_id);
+    const siblingNames = [...new Set(siblingIds)].map(sid => allMembers.find(x => x.id === sid)?.full_name).filter(Boolean);
+    if (siblingNames.length) addRow('Siblings', siblingNames.join(', '));
   }
 
-  // Spouse
-  const spouseMar = allMarriages.filter(mar => mar.person1_id===m.id || mar.person2_id===m.id);
-  spouseMar.forEach(mar => {
-    const sid = mar.person1_id===m.id ? mar.person2_id : mar.person1_id;
-    const sp = allMembers.find(x=>x.id===sid);
-    if (!sp) return;
-    const label = mar.status === 'married' ? 'Spouse' : cap(mar.status);
-    meta.innerHTML += `<div class="detail-row"><div class="detail-row-label">${label}</div><div class="detail-row-value">${escHtml(sp.full_name)}</div></div>`;
+  // Spouses — check both directions in marriages
+  const spouseMarriages = allMarriages.filter(mar => mar.person1_id === m.id || mar.person2_id === m.id);
+  spouseMarriages.forEach(mar => {
+    const sid = mar.person1_id === m.id ? mar.person2_id : mar.person1_id;
+    const sp = allMembers.find(x => x.id === sid);
+    if (sp) addRow(mar.status === 'married' ? 'Spouse' : cap(mar.status), sp.full_name);
+  });
+
+  // Other relationships — bidirectional
+  const otherRels = allRelationships.filter(r =>
+    r.relationship_type !== 'parent' &&
+    (r.person_a_id === m.id || r.person_b_id === m.id)
+  );
+  otherRels.forEach(r => {
+    const otherId = r.person_a_id === m.id ? r.person_b_id : r.person_a_id;
+    const other = allMembers.find(x => x.id === otherId);
+    if (other) {
+      const label = cap(r.relationship_type.replace('_',' / '));
+      addRow(label, other.full_name + (r.qualifier ? ` (${r.qualifier})` : ''));
+    }
   });
 
   // Bio
   const bio = document.getElementById('d-bio');
-  if (m.bio && !m.hide_bio) { bio.textContent = m.bio; bio.style.display='block'; }
-  else bio.style.display='none';
+  if (m.bio && !m.hide_bio) { bio.textContent = m.bio; bio.style.display = 'block'; }
+  else bio.style.display = 'none';
 
-  // Social links
+  // Social
   const social = document.getElementById('d-social');
   social.innerHTML = '';
   if (m.contact_email) social.innerHTML += `<a href="mailto:${escHtml(m.contact_email)}">✉ Email</a>`;
   if (m.facebook_url) social.innerHTML += `<a href="${escHtml(m.facebook_url)}" target="_blank" rel="noopener">f Facebook</a>`;
 
-  // Actions — show edit/delete only if user owns this record or submitted it
+  // Actions
   const actions = document.getElementById('d-actions');
   actions.innerHTML = '';
+
+  // Report button — always visible
+  actions.innerHTML += `<button class="btn btn-warn" style="font-size:11px;padding:6px 12px;" onclick="openReportModal('${m.id}')">⚑ Report</button>`;
+
   if (currentUser) {
-    const isOwn = m.submitted_by_uid === currentUser.id;
-    const isDeceased = !m.is_living;
-    const submittedDeceased = isDeceased && m.submitted_by_uid === currentUser.id;
-    if (isOwn || submittedDeceased) {
-      actions.innerHTML = `
-        <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;" onclick="openEditModal('${m.id}')">Request Edit</button>
-        <button class="btn btn-danger" style="font-size:12px;padding:7px 14px;" onclick="openDeleteModal('${m.id}')">Request Removal</button>
-      `;
+    const canEdit = m.submitted_by_uid === currentUser.id || (!m.is_living && m.submitted_by_uid === currentUser.id);
+    if (canEdit) {
+      actions.innerHTML += `<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="openEditModal('${m.id}')">Request Edit</button>`;
+      actions.innerHTML += `<button class="btn btn-danger" style="font-size:11px;padding:6px 12px;" onclick="openDeleteModal('${m.id}')">Request Removal</button>`;
     }
   }
 
@@ -502,7 +531,7 @@ function closeDetail() {
   activeDetailId = null;
 }
 
-// ── Edit request modal ──
+// ── Edit request ──
 const EDITABLE_FIELDS = [
   { key:'full_name', label:'Full name', type:'text' },
   { key:'nickname', label:'Nickname', type:'text' },
@@ -517,11 +546,12 @@ const EDITABLE_FIELDS = [
 ];
 
 function openEditModal(id) {
-  const m = allMembers.find(x=>x.id===id);
+  const m = allMembers.find(x => x.id === id);
   if (!m) return;
-  document.getElementById('edit-modal-sub').textContent = `Editing: ${m.full_name}${m.suffix?' '+m.suffix:''}. Changes will be reviewed by the admin before going live.`;
-  const fields = document.getElementById('edit-form-fields');
-  fields.innerHTML = '';
+  document.getElementById('edit-modal-sub').textContent = `Editing: ${m.full_name}${m.suffix?' '+m.suffix:''}. Changes go to the admin for review.`;
+  const container = document.getElementById('edit-form-fields');
+  container.innerHTML = '';
+  document.getElementById('edit-conn-list').innerHTML = '';
   EDITABLE_FIELDS.forEach(f => {
     const div = document.createElement('div');
     div.className = 'field' + (f.type==='textarea'?' span-2':'');
@@ -529,45 +559,46 @@ function openEditModal(id) {
     let el;
     if (f.type==='textarea') { el=document.createElement('textarea'); el.rows=3; }
     else { el=document.createElement('input'); el.type=f.type; }
-    el.id = 'edit-field-'+f.key;
-    el.value = m[f.key]||'';
+    el.id = 'ef-' + f.key;
+    el.value = m[f.key] || '';
     div.appendChild(el);
-    fields.appendChild(div);
+    container.appendChild(div);
   });
   document.getElementById('edit-modal').classList.add('open');
 }
 
+function addEditConn() { createConnRow('edit-conn-list', allMembers.filter(m=>!m.is_private)); }
+
 async function submitEditRequest() {
-  if (!currentUser) { showToast('Please sign in first', 'error'); return; }
-  const m = allMembers.find(x=>x.id===activeDetailId);
+  if (!currentUser) { showToast('Please sign in first','error'); return; }
+  const m = allMembers.find(x => x.id === activeDetailId);
   if (!m) return;
   const changes = {};
   EDITABLE_FIELDS.forEach(f => {
-    const newVal = document.getElementById('edit-field-'+f.key)?.value?.trim()||null;
-    const oldVal = m[f.key]||null;
+    const newVal = document.getElementById('ef-'+f.key)?.value?.trim() || null;
+    const oldVal = m[f.key] || null;
     if (newVal !== oldVal) changes[f.key] = { old: oldVal, new: newVal };
   });
-  if (!Object.keys(changes).length) { showToast('No changes detected', 'info'); return; }
+  const newConns = collectConnRows('edit-conn-list');
+  if (newConns.length) changes._connections = { old: [], new: newConns };
+  if (!Object.keys(changes).length) { showToast('No changes detected','info'); return; }
   const { error } = await db.from('member_requests').insert([{
-    request_type: 'update',
-    member_id: m.id,
+    request_type: 'update', member_id: m.id,
     requester_uid: currentUser.id,
     requester_name: currentUser.user_metadata?.full_name || currentUser.email,
     requester_email: currentUser.email,
     proposed_changes: changes,
   }]);
-  if (error) { showToast('Error submitting request', 'error'); return; }
-  closeEditModal();
-  showToast('Edit request submitted! The admin will review it soon.', 'success');
+  if (error) { showToast('Error: '+error.message,'error'); return; }
+  document.getElementById('edit-modal').classList.remove('open');
+  showToast('Edit request submitted — admin will review it','success');
 }
 
-function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
-
-// ── Delete request modal ──
+// ── Delete request ──
 function openDeleteModal(id) {
-  const m = allMembers.find(x=>x.id===id);
+  const m = allMembers.find(x => x.id === id);
   if (!m) return;
-  document.getElementById('delete-modal-sub').textContent = `You are requesting removal of: ${m.full_name}${m.suffix?' '+m.suffix:''}. Please provide a reason.`;
+  document.getElementById('delete-modal-sub').textContent = `Requesting removal of: ${m.full_name}. Please provide a reason.`;
   document.getElementById('delete-reason').value = '';
   document.getElementById('delete-modal').classList.add('open');
 }
@@ -576,29 +607,54 @@ async function submitDeleteRequest() {
   if (!currentUser) { showToast('Please sign in first','error'); return; }
   const reason = document.getElementById('delete-reason').value.trim();
   if (!reason) { showToast('Please provide a reason','error'); return; }
-  const m = allMembers.find(x=>x.id===activeDetailId);
+  const m = allMembers.find(x => x.id === activeDetailId);
   if (!m) return;
   const { error } = await db.from('member_requests').insert([{
-    request_type: 'delete',
-    member_id: m.id,
+    request_type: 'delete', member_id: m.id,
     requester_uid: currentUser.id,
     requester_name: currentUser.user_metadata?.full_name || currentUser.email,
     requester_email: currentUser.email,
     proposed_changes: { reason },
   }]);
-  if (error) { showToast('Error submitting request','error'); return; }
-  closeDeleteModal();
-  showToast('Removal request submitted. The admin will review it.','success');
+  if (error) { showToast('Error: '+error.message,'error'); return; }
+  document.getElementById('delete-modal').classList.remove('open');
+  showToast('Removal request submitted','success');
 }
 
-function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('open'); }
+// ── Report ──
+function openReportModal(id) {
+  const m = allMembers.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('report-modal-sub').textContent = `Reporting: ${m.full_name}`;
+  document.getElementById('report-reason').value = '';
+  document.getElementById('report-modal').classList.add('open');
+}
 
-function zoomIn() { currentZoom = Math.min(2.5, currentZoom+0.15); applyZoom(); }
-function zoomOut() { currentZoom = Math.max(0.3, currentZoom-0.15); applyZoom(); }
-function zoomReset() { currentZoom=1; applyZoom(); }
+async function submitReport() {
+  const reason = document.getElementById('report-reason').value.trim();
+  if (!reason) { showToast('Please describe the issue','error'); return; }
+  const m = allMembers.find(x => x.id === activeDetailId);
+  if (!m) return;
+  const { error } = await db.from('reports').insert([{
+    member_id: m.id,
+    reporter_uid: currentUser?.id || null,
+    reporter_email: currentUser?.email || null,
+    reason,
+  }]);
+  if (error) { showToast('Error: '+error.message,'error'); return; }
+  document.getElementById('report-modal').classList.remove('open');
+  showToast('Report submitted — thank you','success');
+}
+
+// ── Zoom ──
+let _scale = 1;
+function zoomIn() { _scale = Math.min(2, _scale+.15); applyZoom(); }
+function zoomOut() { _scale = Math.max(.3, _scale-.15); applyZoom(); }
+function zoomReset() { _scale=1; applyZoom(); }
 function applyZoom() {
-  const svg = document.querySelector('#tree-svg svg');
-  if (svg) { svg.style.transformOrigin='center top'; svg.style.transform=`scale(${currentZoom})`; }
+  const el = document.getElementById('tree-render');
+  el.style.transform = `scale(${_scale})`;
+  el.style.transformOrigin = 'top center';
 }
 
 init();
