@@ -3,798 +3,588 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin Panel – Family Tree</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+<title>Admin – Family Tree</title>
+<link rel="stylesheet" href="shared.css"/>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="shared.js"></script>
 <style>
-  :root {
-    --cream: #faf7f2;
-    --warm-white: #fff9f0;
-    --brown-dark: #2c1810;
-    --brown-mid: #6b3d2e;
-    --brown-light: #c4956a;
-    --brown-pale: #e8d5c0;
-    --green-deep: #2d4a3e;
-    --green-mid: #4a7c6f;
-    --green-pale: #d4e6e1;
-    --gold: #b8860b;
-    --gold-light: #f0d080;
-    --text-dark: #1a0f0a;
-    --text-mid: #4a3728;
-    --text-light: #8a6a55;
-    --border: #d4c4b0;
-    --error: #c0392b;
-    --success: #27634a;
-    --pending-bg: #fffbeb;
-    --pending-border: #fcd34d;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Lato', sans-serif; background: var(--cream); color: var(--text-dark); min-height: 100vh; }
+  body { overflow-y: auto; }
 
-  /* ── Login screen ── */
-  .login-screen {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .login-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 48px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 8px 40px rgba(44,24,16,0.1);
-  }
-  .login-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
-    color: var(--brown-dark);
-    margin-bottom: 6px;
-  }
-  .login-sub {
-    font-size: 13px;
-    color: var(--text-light);
-    margin-bottom: 32px;
-  }
-  .login-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
-  .login-field label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); }
-  .login-field input {
-    padding: 11px 14px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-family: 'Lato', sans-serif;
-    font-size: 14px;
-    color: var(--text-dark);
-    outline: none;
-    transition: border-color 0.2s;
-    width: 100%;
-  }
-  .login-field input:focus { border-color: var(--brown-mid); }
-  .btn-login {
-    width: 100%;
-    padding: 13px;
-    background: var(--brown-dark);
-    color: var(--gold-light);
-    border: none;
-    border-radius: 4px;
-    font-family: 'Lato', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: background 0.2s;
-  }
-  .btn-login:hover { background: var(--brown-mid); }
-  .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
-  .login-error {
-    margin-top: 14px;
-    padding: 10px 14px;
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 4px;
-    font-size: 13px;
-    color: var(--error);
-    display: none;
-  }
+  /* ── Login ── */
+  .login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-card { background:white; border:1px solid var(--border); border-radius:10px; padding:44px; width:100%; max-width:400px; box-shadow:var(--shadow); }
+  .login-title { font-family:'Playfair Display',serif; font-size:26px; color:var(--brown-dark); margin-bottom:4px; }
+  .login-sub { font-size:13px; color:var(--text-light); margin-bottom:28px; }
+  .login-error { margin-top:12px; padding:10px 14px; background:#fef2f2; border:1px solid #fca5a5; border-radius:4px; font-size:13px; color:var(--error); display:none; }
 
-  /* ── Admin layout ── */
-  .admin-screen { display: none; }
-  .admin-screen.visible { display: block; }
+  /* ── Layout ── */
+  .admin-wrap { display:none; flex-direction:column; min-height:100vh; }
+  .admin-wrap.visible { display:flex; }
 
-  header {
-    background: var(--brown-dark);
-    padding: 16px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 3px solid var(--gold);
-  }
-  .header-title { font-family: 'Playfair Display', serif; color: var(--gold-light); font-size: 22px; }
-  .header-right { display: flex; align-items: center; gap: 16px; }
-  .admin-email { font-size: 13px; color: var(--brown-pale); }
-  .btn-sm {
-    padding: 7px 16px;
-    border-radius: 4px;
-    font-family: 'Lato', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    cursor: pointer;
-    border: none;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-  .btn-outline-gold { background: transparent; color: var(--gold-light); border: 1px solid var(--gold); }
-  .btn-outline-gold:hover { background: var(--gold); color: var(--brown-dark); }
-  .btn-danger { background: #fee2e2; color: var(--error); border: 1px solid #fca5a5; }
-  .btn-danger:hover { background: var(--error); color: white; }
+  .admin-header { background:var(--brown-dark); padding:14px 32px; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid var(--gold); flex-shrink:0; }
+  .admin-title { font-family:'Playfair Display',serif; color:var(--gold-light); font-size:20px; }
+  .admin-header-right { display:flex; align-items:center; gap:12px; }
+  .admin-email { font-size:12px; color:var(--brown-pale); }
 
-  /* ── Tabs ── */
-  .tabs {
-    background: white;
-    border-bottom: 1px solid var(--border);
-    padding: 0 32px;
-    display: flex;
-    gap: 0;
-  }
-  .tab {
-    padding: 14px 20px;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--text-light);
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
-    position: relative;
-  }
-  .tab.active { color: var(--brown-dark); border-bottom-color: var(--gold); }
-  .tab:hover:not(.active) { color: var(--text-mid); }
-  .tab-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    background: var(--gold);
-    color: var(--brown-dark);
-    border-radius: 9px;
-    font-size: 10px;
-    font-weight: 700;
-    margin-left: 6px;
-  }
+  .tabs { background:white; border-bottom:1px solid var(--border); padding:0 32px; display:flex; gap:0; flex-shrink:0; overflow-x:auto; }
+  .tab { padding:13px 18px; font-size:12px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--text-light); cursor:pointer; border-bottom:3px solid transparent; transition:all 0.2s; white-space:nowrap; }
+  .tab.active { color:var(--brown-dark); border-bottom-color:var(--gold); }
+  .tab-badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; background:var(--gold); color:var(--brown-dark); border-radius:9px; font-size:10px; font-weight:700; margin-left:6px; }
 
-  /* ── Main content ── */
-  .main { padding: 28px 32px; }
+  .main { padding:24px 32px; flex:1; }
 
   /* ── Cards ── */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 18px;
-  }
+  .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+  .member-card { background:white; border:1px solid var(--border); border-radius:8px; overflow:hidden; transition:box-shadow 0.2s; }
+  .member-card:hover { box-shadow:var(--shadow); }
+  .member-card.pending { border-top:3px solid var(--gold); }
+  .member-card.approved { border-top:3px solid var(--green-mid); }
+  .member-card.request-card { border-top:3px solid #93c5fd; }
 
-  .member-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    transition: box-shadow 0.2s;
-  }
-  .member-card:hover { box-shadow: 0 4px 20px rgba(44,24,16,0.08); }
-  .member-card.pending { border-top: 3px solid var(--gold); }
-  .member-card.approved { border-top: 3px solid var(--green-mid); }
+  .card-header { padding:14px 16px; display:flex; align-items:flex-start; gap:12px; }
+  .card-avatar-sm { width:44px; height:44px; border-radius:50%; background:var(--brown-pale); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:15px; color:var(--brown-mid); overflow:hidden; }
+  .card-avatar-sm img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+  .card-info { flex:1; min-width:0; }
+  .card-name { font-family:'Playfair Display',serif; font-size:16px; color:var(--text-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-sub { font-size:12px; color:var(--text-light); margin-top:2px; }
+  .card-body { padding:0 16px 12px; }
+  .card-detail { font-size:12px; color:var(--text-light); margin-bottom:4px; }
+  .card-detail strong { color:var(--text-mid); }
+  .card-notes { margin-top:8px; padding:9px 11px; background:var(--cream); border-radius:4px; font-size:12px; color:var(--text-mid); line-height:1.6; white-space:pre-wrap; word-break:break-word; max-height:100px; overflow-y:auto; }
+  .card-actions { padding:10px 16px; border-top:1px solid var(--border); display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
 
-  .card-header {
-    padding: 16px 18px;
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-  }
-  .card-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--brown-pale);
-    flex-shrink: 0;
-    object-fit: cover;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: var(--brown-mid);
-    font-family: 'Playfair Display', serif;
-    font-weight: 600;
-  }
-  .card-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  /* ── Diff view ── */
+  .diff-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  .diff-table th { text-align:left; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-light); padding:6px 8px; border-bottom:2px solid var(--border); }
+  .diff-table td { padding:7px 8px; border-bottom:1px solid var(--cream); vertical-align:top; }
+  .diff-field { color:var(--text-mid); font-weight:700; }
+  .diff-old { color:var(--text-light); text-decoration:line-through; }
+  .diff-new { color:var(--green-deep); font-weight:700; }
 
-  .card-info { flex: 1; min-width: 0; }
-  .card-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 17px;
-    color: var(--text-dark);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-meta { font-size: 12px; color: var(--text-light); margin-top: 3px; }
+  /* ── Add member modal ── */
+  .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(44,24,16,0.5); z-index:500; align-items:center; justify-content:center; padding:20px; }
+  .modal-backdrop.open { display:flex; }
+  .modal { background:white; border-radius:10px; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; padding:32px; position:relative; }
+  .modal-title { font-family:'Playfair Display',serif; font-size:22px; color:var(--brown-dark); margin-bottom:20px; }
+  .modal-close { position:absolute; top:14px; right:14px; width:28px; height:28px; background:var(--cream); border:1px solid var(--border); border-radius:50%; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .modal-footer { margin-top:22px; display:flex; gap:10px; justify-content:flex-end; }
 
-  .card-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    flex-shrink: 0;
-  }
-  .status-pending { background: var(--pending-bg); color: #92400e; border: 1px solid var(--pending-border); }
-  .status-approved { background: var(--green-pale); color: var(--green-deep); border: 1px solid var(--green-mid); }
+  .empty-msg { text-align:center; padding:60px 24px; color:var(--text-light); }
+  .empty-msg .big { font-size:40px; margin-bottom:10px; }
+  .empty-msg p { font-size:14px; line-height:1.6; }
 
-  .card-body { padding: 0 18px 14px; }
-  .card-detail-row { font-size: 12px; color: var(--text-light); margin-bottom: 5px; }
-  .card-detail-row strong { color: var(--text-mid); font-weight: 700; }
-
-  .card-notes {
-    margin-top: 10px;
-    padding: 10px 12px;
-    background: var(--cream);
-    border-radius: 4px;
-    font-size: 12px;
-    color: var(--text-mid);
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .card-actions {
-    padding: 12px 18px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .btn-approve {
-    padding: 7px 16px;
-    background: var(--green-deep);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-approve:hover { background: var(--green-mid); }
-
-  .btn-unapprove {
-    padding: 7px 16px;
-    background: #fffbeb;
-    color: #92400e;
-    border: 1px solid var(--pending-border);
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-unapprove:hover { background: #fef3c7; }
-
-  .btn-edit-inline {
-    padding: 7px 16px;
-    background: white;
-    color: var(--text-mid);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-left: auto;
-  }
-  .btn-edit-inline:hover { background: var(--cream); }
-
-  /* ── Edit modal ── */
-  .modal-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(44,24,16,0.5);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .modal-backdrop.open { display: flex; }
-
-  .modal {
-    background: white;
-    border-radius: 10px;
-    width: 100%;
-    max-width: 640px;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 32px;
-    position: relative;
-  }
-  .modal-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    color: var(--brown-dark);
-    margin-bottom: 24px;
-  }
-  .modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 30px;
-    height: 30px;
-    background: var(--cream);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .edit-field { display: flex; flex-direction: column; gap: 5px; }
-  .edit-field label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); }
-  .edit-field input, .edit-field select, .edit-field textarea {
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-family: 'Lato', sans-serif;
-    font-size: 13px;
-    color: var(--text-dark);
-    outline: none;
-    transition: border-color 0.2s;
-    width: 100%;
-  }
-  .edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus { border-color: var(--brown-mid); }
-  .edit-field textarea { min-height: 70px; resize: vertical; }
-  .edit-field.span-2 { grid-column: span 2; }
-
-  .modal-footer {
-    margin-top: 24px;
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-  }
-  .btn-save {
-    padding: 10px 24px;
-    background: var(--brown-dark);
-    color: var(--gold-light);
-    border: none;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-save:hover { background: var(--brown-mid); }
-  .btn-cancel {
-    padding: 10px 24px;
-    background: white;
-    color: var(--text-mid);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  /* Privacy toggle row in modal */
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--text-mid);
-  }
-  .toggle-row input[type=checkbox] { accent-color: var(--brown-mid); width: 15px; height: 15px; }
-
-  /* ── Empty state ── */
-  .empty-msg {
-    text-align: center;
-    padding: 60px 24px;
-    color: var(--text-light);
-  }
-  .empty-msg .big { font-size: 40px; margin-bottom: 12px; }
-  .empty-msg p { font-size: 14px; line-height: 1.6; }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    padding: 12px 20px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    color: white;
-    z-index: 999;
-    transform: translateY(80px);
-    opacity: 0;
-    transition: all 0.3s;
-    pointer-events: none;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-  .toast.success { background: var(--green-deep); }
-  .toast.error { background: var(--error); }
-
-  @media (max-width: 600px) {
-    header { padding: 14px 20px; }
-    .main { padding: 20px; }
-    .tabs { padding: 0 20px; }
-    .edit-grid { grid-template-columns: 1fr; }
-    .edit-field.span-2 { grid-column: span 1; }
+  @media (max-width:600px) {
+    .admin-header, .main { padding-left:20px; padding-right:20px; }
+    .tabs { padding:0 16px; }
   }
 </style>
 </head>
 <body>
 
-<!-- Login screen -->
+<!-- Login -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
     <div class="login-title">Admin Panel</div>
-    <div class="login-sub">Sign in to manage the family tree</div>
-    <div class="login-field">
+    <div class="login-sub">Family Tree Management</div>
+    <div class="field" style="margin-bottom:16px;">
       <label>Email</label>
-      <input type="email" id="login-email" placeholder="admin@example.com" onkeydown="if(event.key==='Enter') doLogin()"/>
+      <input type="email" id="login-email" placeholder="admin@example.com" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
-    <div class="login-field">
+    <div class="field" style="margin-bottom:20px;">
       <label>Password</label>
-      <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin()"/>
+      <input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
-    <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In</button>
+    <button class="btn btn-dark" style="width:100%;padding:13px;font-size:14px;" id="login-btn" onclick="doLogin()">Sign In</button>
     <div class="login-error" id="login-error"></div>
   </div>
 </div>
 
 <!-- Admin app -->
-<div class="admin-screen" id="admin-screen">
-  <header>
-    <div class="header-title">Family Tree Admin</div>
-    <div class="header-right">
-      <span class="admin-email" id="admin-email-display"></span>
-      <a href="index.html" class="btn-sm btn-outline-gold">View Tree</a>
-      <button class="btn-sm btn-danger" onclick="doLogout()">Sign Out</button>
-    </div>
-  </header>
-
-  <div class="tabs">
-    <div class="tab active" id="tab-pending" onclick="switchTab('pending')">
-      Pending <span class="tab-badge" id="pending-count">0</span>
-    </div>
-    <div class="tab" id="tab-approved" onclick="switchTab('approved')">
-      Approved <span class="tab-badge" id="approved-count">0</span>
+<div class="admin-wrap" id="admin-wrap">
+  <div class="admin-header">
+    <div class="admin-title">Family Tree Admin</div>
+    <div class="admin-header-right">
+      <span class="admin-email" id="admin-email"></span>
+      <a href="index.html" class="btn btn-outline" style="font-size:11px;padding:7px 14px;">View Tree</a>
+      <button class="btn btn-danger" style="font-size:11px;padding:7px 14px;" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
+  <div class="tabs">
+    <div class="tab active" id="tab-pending" onclick="switchTab('pending')">Pending <span class="tab-badge" id="count-pending">0</span></div>
+    <div class="tab" id="tab-approved" onclick="switchTab('approved')">Approved <span class="tab-badge" id="count-approved">0</span></div>
+    <div class="tab" id="tab-requests" onclick="switchTab('requests')">Requests <span class="tab-badge" id="count-requests">0</span></div>
+  </div>
+
   <div class="main">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      <button class="btn btn-gold" onclick="openAddModal()">+ Add Member Directly</button>
+    </div>
     <div class="cards-grid" id="cards-grid"></div>
     <div class="empty-msg" id="empty-msg" style="display:none">
       <div class="big">✓</div>
-      <p>No pending submissions right now.</p>
+      <p id="empty-text">Nothing here.</p>
     </div>
   </div>
 </div>
 
-<!-- Edit modal -->
-<div class="modal-backdrop" id="modal-backdrop">
+<!-- Add / Edit member modal -->
+<div class="modal-backdrop" id="member-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="modal-title">Edit Member</div>
+    <button class="modal-close" onclick="closeMemberModal()">×</button>
+    <div class="modal-title" id="member-modal-title">Add Member</div>
     <input type="hidden" id="edit-id"/>
-    <div class="edit-grid">
-      <div class="edit-field">
-        <label>Full name</label>
-        <input type="text" id="edit-full_name"/>
+    <div class="form-grid">
+      <div class="field"><label>Full name <span class="req">*</span></label><input type="text" id="ef-full_name"/></div>
+      <div class="field"><label>Nickname</label><input type="text" id="ef-nickname"/></div>
+      <div class="field"><label>Suffix</label><input type="text" id="ef-suffix"/></div>
+      <div class="field"><label>Gender</label>
+        <select id="ef-gender"><option value="">Unknown</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select>
       </div>
-      <div class="edit-field">
-        <label>Nickname</label>
-        <input type="text" id="edit-nickname"/>
-      </div>
-      <div class="edit-field">
-        <label>Suffix</label>
-        <input type="text" id="edit-suffix"/>
-      </div>
-      <div class="edit-field">
-        <label>Gender</label>
-        <select id="edit-gender">
-          <option value="">Unknown</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="edit-field">
-        <label>Birth date</label>
-        <input type="date" id="edit-birth_date"/>
-      </div>
-      <div class="edit-field">
-        <label>Death date</label>
-        <input type="date" id="edit-death_date"/>
-      </div>
-      <div class="edit-field">
-        <label>Birthplace</label>
-        <input type="text" id="edit-birth_place"/>
-      </div>
-      <div class="edit-field">
-        <label>Generation number</label>
-        <input type="number" id="edit-generation_number" min="1"/>
-      </div>
-      <div class="edit-field span-2">
-        <label>Photo URL</label>
-        <input type="text" id="edit-photo_url"/>
-      </div>
-      <div class="edit-field span-2">
-        <label>Bio</label>
-        <textarea id="edit-bio"></textarea>
-      </div>
-      <div class="edit-field span-2">
-        <label>Admin notes</label>
-        <textarea id="edit-notes"></textarea>
-      </div>
+      <div class="field"><label>Birth date</label><input type="date" id="ef-birth_date"/></div>
+      <div class="field"><label>Death date</label><input type="date" id="ef-death_date"/></div>
+      <div class="field"><label>Birthplace</label><input type="text" id="ef-birth_place"/></div>
+      <div class="field"><label>Generation number</label><input type="number" id="ef-generation_number" min="1"/></div>
+      <div class="field span-2"><label>Photo URL</label><input type="text" id="ef-photo_url"/></div>
+      <div class="field"><label>Contact email</label><input type="text" id="ef-contact_email"/></div>
+      <div class="field"><label>Facebook URL</label><input type="text" id="ef-facebook_url"/></div>
+      <div class="field span-2"><label>Bio</label><textarea id="ef-bio"></textarea></div>
+      <div class="field span-2"><label>Admin notes</label><textarea id="ef-notes"></textarea></div>
+    </div>
 
-      <div class="edit-field span-2" style="gap:10px">
-        <label>Privacy & visibility</label>
-        <label class="toggle-row"><input type="checkbox" id="edit-is_living"/> Is living</label>
-        <label class="toggle-row"><input type="checkbox" id="edit-hide_birth_date"/> Hide birth date</label>
-        <label class="toggle-row"><input type="checkbox" id="edit-hide_birth_place"/> Hide birthplace</label>
-        <label class="toggle-row"><input type="checkbox" id="edit-hide_bio"/> Hide bio</label>
-        <label class="toggle-row"><input type="checkbox" id="edit-hide_photo"/> Hide photo</label>
-        <label class="toggle-row"><input type="checkbox" id="edit-is_private"/> Hide from public tree entirely</label>
-        <label class="toggle-row"><input type="checkbox" id="edit-is_unlinked"/> Mark as unlinked (unknown connections)</label>
+    <!-- Connection linker -->
+    <div style="margin-top:20px;">
+      <div class="section-title" style="margin-bottom:12px;">Link Family Connections</div>
+      <div id="admin-conn-list"></div>
+      <button type="button" class="btn btn-ghost" style="font-size:12px;margin-top:8px;" onclick="addAdminConn()">+ Add connection</button>
+    </div>
+
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);">Privacy & Visibility</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <label class="check-row"><input type="checkbox" id="ef-is_living" checked/> Is living</label>
+        <label class="check-row"><input type="checkbox" id="ef-hide_birth_date"/> Hide birth date</label>
+        <label class="check-row"><input type="checkbox" id="ef-hide_birth_place"/> Hide birthplace</label>
+        <label class="check-row"><input type="checkbox" id="ef-hide_bio"/> Hide bio</label>
+        <label class="check-row"><input type="checkbox" id="ef-hide_photo"/> Hide photo</label>
+        <label class="check-row"><input type="checkbox" id="ef-is_private"/> Hide entirely</label>
+        <label class="check-row"><input type="checkbox" id="ef-is_unlinked"/> Mark as unlinked</label>
+        <label class="check-row"><input type="checkbox" id="ef-approved"/> Approved (visible)</label>
       </div>
     </div>
+
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" onclick="saveEdit()">Save Changes</button>
+      <button class="btn btn-ghost" onclick="closeMemberModal()">Cancel</button>
+      <button class="btn btn-dark" onclick="saveMember()">Save Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Request review modal -->
+<div class="modal-backdrop" id="request-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeRequestModal()">×</button>
+    <div class="modal-title" id="req-modal-title">Review Request</div>
+    <div id="req-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRequestModal()">Close</button>
+      <button class="btn btn-danger" id="req-reject-btn">Reject</button>
+      <button class="btn btn-success" id="req-approve-btn">Approve</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script src="config.js"></script>
 <script>
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 let currentTab = 'pending';
-let allMembers = [];
-
-// ── Auth ──
-async function init() {
-  const { data: { session } } = await db.auth.getSession();
-  if (session) showAdmin(session.user);
-}
+let allMembers = [], allRequests = [];
+let adminConnCount = 0;
+const REL_TYPES = [
+  ['parent','Parent'],['child','Child'],['spouse','Spouse / Partner'],
+  ['sibling','Sibling'],['cousin','Cousin'],['aunt_uncle','Aunt / Uncle'],
+  ['niece_nephew','Niece / Nephew'],['grandparent','Grandparent'],['grandchild','Grandchild'],
+];
 
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
+  const pw = document.getElementById('login-pw').value;
   const btn = document.getElementById('login-btn');
-  const errEl = document.getElementById('login-error');
-  btn.disabled = true;
-  btn.textContent = 'Signing in…';
-  errEl.style.display = 'none';
-
-  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  const err = document.getElementById('login-error');
+  btn.disabled=true; btn.textContent='Signing in…'; err.style.display='none';
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
   if (error) {
-    errEl.textContent = error.message;
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Sign In';
-  } else {
-    showAdmin(data.user);
-  }
+    err.textContent = error.message; err.style.display='block';
+    btn.disabled=false; btn.textContent='Sign In';
+  } else { showAdmin(data.user); }
 }
 
 async function doLogout() {
   await db.auth.signOut();
-  document.getElementById('admin-screen').classList.remove('visible');
-  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-wrap').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
 }
 
 function showAdmin(user) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('admin-screen').classList.add('visible');
-  document.getElementById('admin-email-display').textContent = user.email;
-  loadMembers();
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('admin-wrap').classList.add('visible');
+  document.getElementById('admin-email').textContent = user.email;
+  loadAll();
 }
 
-// ── Data ──
-async function loadMembers() {
-  const { data, error } = await db.from('family_members').select('*').order('created_at', { ascending: false });
-  if (error) { showToast('Failed to load members', 'error'); return; }
-  allMembers = data || [];
-  updateCounts();
-  renderCards();
+async function loadAll() {
+  const [mRes, rqRes] = await Promise.all([
+    db.from('family_members').select('*').order('created_at',{ascending:false}),
+    db.from('member_requests').select('*').order('created_at',{ascending:false}),
+  ]);
+  allMembers = mRes.data || [];
+  allRequests = rqRes.data || [];
+  window._relationships = [];
+  const { data: rels } = await db.from('relationships').select('*');
+  window._relationships = rels || [];
+  updateCounts(); renderCards();
 }
 
 function updateCounts() {
-  const pending = allMembers.filter(m => !m.approved).length;
-  const approved = allMembers.filter(m => m.approved).length;
-  document.getElementById('pending-count').textContent = pending;
-  document.getElementById('approved-count').textContent = approved;
+  document.getElementById('count-pending').textContent = allMembers.filter(m=>!m.approved).length;
+  document.getElementById('count-approved').textContent = allMembers.filter(m=>m.approved).length;
+  document.getElementById('count-requests').textContent = allRequests.filter(r=>r.status==='pending').length;
 }
 
 function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
   renderCards();
 }
 
 function renderCards() {
   const grid = document.getElementById('cards-grid');
   const empty = document.getElementById('empty-msg');
-  const filtered = allMembers.filter(m => currentTab === 'pending' ? !m.approved : m.approved);
+  let items = [];
 
-  if (filtered.length === 0) {
-    grid.innerHTML = '';
-    empty.style.display = 'block';
-    empty.querySelector('p').textContent = currentTab === 'pending'
-      ? 'No pending submissions right now.'
-      : 'No approved members yet.';
+  if (currentTab==='pending') items = allMembers.filter(m=>!m.approved);
+  else if (currentTab==='approved') items = allMembers.filter(m=>m.approved);
+  else items = allRequests.filter(r=>r.status==='pending');
+
+  if (!items.length) {
+    grid.innerHTML=''; empty.style.display='block';
+    document.getElementById('empty-text').textContent =
+      currentTab==='pending' ? 'No pending submissions.' :
+      currentTab==='approved' ? 'No approved members yet.' : 'No pending requests.';
     return;
   }
-  empty.style.display = 'none';
-  grid.innerHTML = '';
-  filtered.forEach(m => grid.appendChild(buildCard(m)));
+  empty.style.display='none'; grid.innerHTML='';
+  items.forEach(item => {
+    if (currentTab==='requests') grid.appendChild(buildRequestCard(item));
+    else grid.appendChild(buildMemberCard(item));
+  });
 }
 
-function buildCard(m) {
+function buildMemberCard(m) {
   const card = document.createElement('div');
-  card.className = 'member-card ' + (m.approved ? 'approved' : 'pending');
-
-  const initials = (m.full_name || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-  const photoHTML = (m.photo_url && !m.hide_photo)
-    ? `<div class="card-avatar"><img src="${m.photo_url}" alt="" onerror="this.parentElement.textContent='${initials}'"/></div>`
-    : `<div class="card-avatar">${initials}</div>`;
-
-  const statusClass = m.approved ? 'status-approved' : 'status-pending';
-  const statusText = m.approved ? 'Approved' : 'Pending';
-
-  const metaParts = [];
-  if (!m.hide_birth_date && m.birth_date) metaParts.push(m.birth_date);
-  if (!m.hide_birth_place && m.birth_place) metaParts.push(m.birth_place);
-
-  const rows = [
-    m.submitted_by ? ['Submitted by', m.submitted_by] : null,
-    m.gender ? ['Gender', capitalize(m.gender)] : null,
-    m.is_private ? ['Visibility', 'Hidden from public'] : null,
-    m.is_unlinked ? ['Connections', 'Unlinked'] : null,
+  card.className = 'member-card ' + (m.approved?'approved':'pending');
+  const av = m.photo_url && !m.hide_photo
+    ? `<div class="card-avatar-sm"><img src="${m.photo_url}" onerror="this.parentElement.textContent='${initials(m.full_name)}'"/></div>`
+    : `<div class="card-avatar-sm">${initials(m.full_name)}</div>`;
+  const details = [
+    m.submitted_by_name ? ['Submitted by', m.submitted_by_name] : null,
+    m.birth_date && !m.hide_birth_date ? ['Born', formatDate(m.birth_date)] : null,
+    m.birth_place && !m.hide_birth_place ? ['From', m.birth_place] : null,
+    !m.is_living ? ['Status', 'Deceased'] : null,
+    m.is_private ? ['Visibility','Hidden from public'] : null,
+    m.is_unlinked ? ['Connections','Unlinked'] : null,
   ].filter(Boolean);
 
   card.innerHTML = `
     <div class="card-header">
-      ${photoHTML}
+      ${av}
       <div class="card-info">
-        <div class="card-name">${m.full_name}${m.suffix ? ' ' + m.suffix : ''}</div>
-        <div class="card-meta">${metaParts.join(' · ') || 'No date/location'}</div>
+        <div class="card-name">${escHtml(m.full_name)}${m.suffix?' '+escHtml(m.suffix):''}</div>
+        <div class="card-sub">${m.nickname?'"'+escHtml(m.nickname)+'" · ':''}<span class="badge ${m.approved?'badge-approved':'badge-pending'}">${m.approved?'Approved':'Pending'}</span></div>
       </div>
-      <div class="card-status ${statusClass}">${statusText}</div>
     </div>
     <div class="card-body">
-      ${rows.map(([l,v]) => `<div class="card-detail-row"><strong>${l}:</strong> ${v}</div>`).join('')}
-      ${m.notes ? `<div class="card-notes">${escHtml(m.notes)}</div>` : ''}
+      ${details.map(([l,v])=>`<div class="card-detail"><strong>${l}:</strong> ${escHtml(v)}</div>`).join('')}
+      ${m.notes?`<div class="card-notes">${escHtml(m.notes)}</div>`:''}
     </div>
     <div class="card-actions">
       ${!m.approved
-        ? `<button class="btn-approve" onclick="approve('${m.id}')">Approve</button>`
-        : `<button class="btn-unapprove" onclick="unapprove('${m.id}')">Un-approve</button>`
+        ? `<button class="btn btn-success" style="font-size:11px;padding:6px 14px;" onclick="approve('${m.id}')">Approve</button>`
+        : `<button class="btn btn-ghost" style="font-size:11px;padding:6px 14px;" onclick="unapprove('${m.id}')">Un-approve</button>`
       }
-      <button class="btn-sm btn-danger" onclick="deleteMember('${m.id}')">Delete</button>
-      <button class="btn-edit-inline" onclick="openEdit('${m.id}')">Edit</button>
-    </div>
-  `;
+      <button class="btn btn-ghost" style="font-size:11px;padding:6px 14px;" onclick="openEditModal('${m.id}')">Edit</button>
+      <button class="btn btn-danger" style="font-size:11px;padding:6px 14px;" onclick="deleteMember('${m.id}')">Delete</button>
+    </div>`;
   return card;
 }
 
+function buildRequestCard(r) {
+  const m = allMembers.find(x=>x.id===r.member_id);
+  const card = document.createElement('div');
+  card.className = 'member-card request-card';
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-info">
+        <div class="card-name">${r.request_type==='update'?'Update Request':'Removal Request'}</div>
+        <div class="card-sub">For: <strong>${escHtml(m?.full_name||'Unknown')}</strong></div>
+      </div>
+      <span class="badge badge-update">${cap(r.request_type)}</span>
+    </div>
+    <div class="card-body">
+      <div class="card-detail"><strong>Requested by:</strong> ${escHtml(r.requester_name||r.requester_email||'Unknown')}</div>
+      <div class="card-detail"><strong>Submitted:</strong> ${formatDate(r.created_at?.split('T')[0])}</div>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-ghost" style="font-size:11px;padding:6px 14px;" onclick="openRequestModal('${r.id}')">Review</button>
+    </div>`;
+  return card;
+}
+
+// ── Approve / unapprove / delete ──
 async function approve(id) {
-  const { error } = await db.from('family_members').update({ approved: true }).eq('id', id);
-  if (error) { showToast('Error approving', 'error'); return; }
-  const m = allMembers.find(x => x.id === id);
-  if (m) m.approved = true;
+  const { error } = await db.from('family_members').update({ approved:true }).eq('id',id);
+  if (error) { showToast('Error','error'); return; }
+  // Also approve pending relationships for this member
+  await db.from('relationships').update({ approved:true }).or(`person_a_id.eq.${id},person_b_id.eq.${id}`).eq('approved',false);
+  allMembers.find(m=>m.id===id).approved=true;
   updateCounts(); renderCards();
-  showToast('Member approved and now visible on tree', 'success');
+  showToast('Member approved and visible on tree','success');
 }
 
 async function unapprove(id) {
-  const { error } = await db.from('family_members').update({ approved: false }).eq('id', id);
-  if (error) { showToast('Error', 'error'); return; }
-  const m = allMembers.find(x => x.id === id);
-  if (m) m.approved = false;
+  const { error } = await db.from('family_members').update({ approved:false }).eq('id',id);
+  if (error) { showToast('Error','error'); return; }
+  allMembers.find(m=>m.id===id).approved=false;
   updateCounts(); renderCards();
-  showToast('Member moved back to pending', 'success');
+  showToast('Member moved back to pending','success');
 }
 
 async function deleteMember(id) {
-  if (!confirm('Are you sure you want to permanently delete this member? This cannot be undone.')) return;
-  const { error } = await db.from('family_members').delete().eq('id', id);
-  if (error) { showToast('Error deleting', 'error'); return; }
-  allMembers = allMembers.filter(x => x.id !== id);
+  const m = allMembers.find(x=>x.id===id);
+  if (!confirm(`Permanently delete "${m?.full_name}"? This cannot be undone.`)) return;
+  const { error } = await db.from('family_members').delete().eq('id',id);
+  if (error) { showToast('Error deleting','error'); return; }
+  allMembers = allMembers.filter(x=>x.id!==id);
   updateCounts(); renderCards();
-  showToast('Member deleted', 'success');
+  showToast('Member deleted','success');
 }
 
-// ── Edit modal ──
-function openEdit(id) {
-  const m = allMembers.find(x => x.id === id);
+// ── Add / Edit member modal ──
+let adminConnections = [];
+
+function openAddModal() {
+  document.getElementById('edit-id').value='';
+  document.getElementById('member-modal-title').textContent='Add Member Directly';
+  const fields=['full_name','nickname','suffix','birth_place','bio','notes','photo_url','contact_email','facebook_url','generation_number'];
+  fields.forEach(f=>{ const el=document.getElementById('ef-'+f); if(el) el.value=''; });
+  ['birth_date','death_date'].forEach(f=>{ document.getElementById('ef-'+f).value=''; });
+  document.getElementById('ef-gender').value='';
+  ['is_living','ef-approved'].forEach(f=>{ const el=document.getElementById(f)||document.getElementById('ef-'+f.replace('ef-','')); if(el) el.checked = f.includes('living'); });
+  document.getElementById('ef-is_living').checked=true;
+  document.getElementById('ef-approved').checked=true;
+  ['hide_birth_date','hide_birth_place','hide_bio','hide_photo','is_private','is_unlinked'].forEach(f=>{ document.getElementById('ef-'+f).checked=false; });
+  document.getElementById('admin-conn-list').innerHTML='';
+  adminConnections=[];
+  document.getElementById('member-modal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const m = allMembers.find(x=>x.id===id);
   if (!m) return;
-  document.getElementById('edit-id').value = m.id;
-  const fields = ['full_name','nickname','suffix','gender','birth_date','death_date','birth_place','generation_number','photo_url','bio','notes'];
-  fields.forEach(f => {
-    const el = document.getElementById('edit-' + f);
-    if (el) el.value = m[f] || '';
-  });
-  const checks = ['is_living','hide_birth_date','hide_birth_place','hide_bio','hide_photo','is_private','is_unlinked'];
-  checks.forEach(f => {
-    const el = document.getElementById('edit-' + f);
-    if (el) el.checked = !!m[f];
-  });
-  document.getElementById('modal-backdrop').classList.add('open');
+  document.getElementById('edit-id').value=id;
+  document.getElementById('member-modal-title').textContent='Edit Member';
+  const textFields=['full_name','nickname','suffix','birth_place','bio','notes','photo_url','contact_email','facebook_url'];
+  textFields.forEach(f=>{ const el=document.getElementById('ef-'+f); if(el) el.value=m[f]||''; });
+  document.getElementById('ef-generation_number').value=m.generation_number||'';
+  document.getElementById('ef-birth_date').value=m.birth_date||'';
+  document.getElementById('ef-death_date').value=m.death_date||'';
+  document.getElementById('ef-gender').value=m.gender||'';
+  ['is_living','hide_birth_date','hide_birth_place','hide_bio','hide_photo','is_private','is_unlinked','approved'].forEach(f=>{ document.getElementById('ef-'+f).checked=!!m[f]; });
+  document.getElementById('admin-conn-list').innerHTML='';
+  adminConnections=[];
+  document.getElementById('member-modal').classList.add('open');
 }
 
-async function saveEdit() {
-  const id = document.getElementById('edit-id').value;
-  const fields = ['full_name','nickname','suffix','gender','birth_date','death_date','birth_place','generation_number','photo_url','bio','notes'];
-  const checks = ['is_living','hide_birth_date','hide_birth_place','hide_bio','hide_photo','is_private','is_unlinked'];
+function addAdminConn() {
+  adminConnCount++;
+  const rowId = 'ac-'+adminConnCount;
+  const div = document.createElement('div');
+  div.id=rowId;
+  div.style.cssText='display:grid;grid-template-columns:160px 1fr auto;gap:10px;align-items:end;margin-bottom:10px;';
 
-  const updates = { updated_at: new Date().toISOString() };
-  fields.forEach(f => {
-    const val = document.getElementById('edit-' + f)?.value;
-    updates[f] = val === '' ? null : val;
-  });
-  checks.forEach(f => {
-    updates[f] = document.getElementById('edit-' + f)?.checked || false;
-  });
+  const typeDiv=document.createElement('div'); typeDiv.className='field';
+  typeDiv.innerHTML='<label>Type</label>';
+  const sel=document.createElement('select'); sel.id='ac-type-'+adminConnCount;
+  REL_TYPES.forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; sel.appendChild(o); });
+  typeDiv.appendChild(sel);
 
-  const { error } = await db.from('family_members').update(updates).eq('id', id);
-  if (error) { showToast('Error saving', 'error'); return; }
-  const idx = allMembers.findIndex(x => x.id === id);
-  if (idx > -1) allMembers[idx] = { ...allMembers[idx], ...updates };
-  closeModal(); renderCards();
-  showToast('Changes saved', 'success');
+  const pickerDiv=document.createElement('div'); pickerDiv.className='field';
+  pickerDiv.innerHTML='<label>Family member</label>';
+  const pc=document.createElement('div'); pc.id='ac-picker-'+adminConnCount;
+  pickerDiv.appendChild(pc);
+
+  const rmBtn=document.createElement('button'); rmBtn.type='button';
+  rmBtn.style.cssText='width:32px;height:38px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;color:#c0392b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+  rmBtn.innerHTML='×'; rmBtn.onclick=()=>document.getElementById(rowId).remove();
+
+  div.appendChild(typeDiv); div.appendChild(pickerDiv); div.appendChild(rmBtn);
+  document.getElementById('admin-conn-list').appendChild(div);
+
+  const approvedOnly = allMembers.filter(m=>m.approved);
+  new PersonPicker(pc, approvedOnly, null, 'Search members…');
 }
 
-function closeModal() {
-  document.getElementById('modal-backdrop').classList.remove('open');
+async function saveMember() {
+  const name = document.getElementById('ef-full_name').value.trim();
+  if (!name) { showToast('Full name is required','error'); return; }
+
+  const deathDate = document.getElementById('ef-death_date').value || null;
+  const payload = {
+    full_name: name,
+    nickname: document.getElementById('ef-nickname').value.trim()||null,
+    suffix: document.getElementById('ef-suffix').value.trim()||null,
+    gender: document.getElementById('ef-gender').value||null,
+    birth_date: document.getElementById('ef-birth_date').value||null,
+    death_date: deathDate,
+    is_living: deathDate ? false : document.getElementById('ef-is_living').checked,
+    birth_place: document.getElementById('ef-birth_place').value.trim()||null,
+    bio: document.getElementById('ef-bio').value.trim()||null,
+    photo_url: document.getElementById('ef-photo_url').value.trim()||null,
+    contact_email: document.getElementById('ef-contact_email').value.trim()||null,
+    facebook_url: document.getElementById('ef-facebook_url').value.trim()||null,
+    notes: document.getElementById('ef-notes').value.trim()||null,
+    generation_number: parseInt(document.getElementById('ef-generation_number').value)||null,
+    hide_birth_date: document.getElementById('ef-hide_birth_date').checked,
+    hide_birth_place: document.getElementById('ef-hide_birth_place').checked,
+    hide_bio: document.getElementById('ef-hide_bio').checked,
+    hide_photo: document.getElementById('ef-hide_photo').checked,
+    is_private: document.getElementById('ef-is_private').checked,
+    is_unlinked: document.getElementById('ef-is_unlinked').checked,
+    approved: document.getElementById('ef-approved').checked,
+    updated_at: new Date().toISOString(),
+  };
+
+  const editId = document.getElementById('edit-id').value;
+  let savedId = editId;
+
+  if (editId) {
+    const { error } = await db.from('family_members').update(payload).eq('id',editId);
+    if (error) { showToast('Error saving: '+error.message,'error'); return; }
+    const idx = allMembers.findIndex(x=>x.id===editId);
+    if (idx>-1) allMembers[idx]={...allMembers[idx],...payload};
+  } else {
+    const { data, error } = await db.from('family_members').insert([payload]).select();
+    if (error) { showToast('Error saving: '+error.message,'error'); return; }
+    savedId = data?.[0]?.id;
+    if (data?.[0]) allMembers.unshift(data[0]);
+  }
+
+  // Save connections
+  if (savedId) {
+    const connRows = document.querySelectorAll('[id^="ac-"]');
+    for (const row of connRows) {
+      if (!row.id.startsWith('ac-') || row.querySelector === undefined) continue;
+      const idNum = row.id.replace('ac-','');
+      const sel = document.getElementById('ac-type-'+idNum);
+      const pickerSel = row.querySelector('.picker-selected-name');
+      if (!pickerSel || !sel) continue;
+      const selectedName = pickerSel.textContent.trim();
+      const matched = allMembers.find(m=>(m.full_name+(m.suffix?' '+m.suffix:'')).trim()===selectedName);
+      if (matched) {
+        await db.from('relationships').insert([{
+          person_a_id: savedId,
+          person_b_id: matched.id,
+          relationship_type: sel.value,
+          approved: true, is_visible: true,
+        }]);
+      }
+    }
+  }
+
+  closeMemberModal(); updateCounts(); renderCards();
+  showToast(editId?'Member updated':'Member added','success');
 }
 
-// ── Utils ──
-function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
+function closeMemberModal() { document.getElementById('member-modal').classList.remove('open'); }
 
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ── Request review ──
+let activeRequestId = null;
+
+function openRequestModal(id) {
+  const r = allRequests.find(x=>x.id===id);
+  if (!r) return;
+  activeRequestId = id;
+  const m = allMembers.find(x=>x.id===r.member_id);
+  const title = r.request_type==='update' ? 'Review Update Request' : 'Review Removal Request';
+  document.getElementById('req-modal-title').textContent = title;
+
+  let body = `<p style="font-size:13px;color:var(--text-light);margin-bottom:16px;">
+    Requested by <strong style="color:var(--text-mid)">${escHtml(r.requester_name||r.requester_email||'Unknown')}</strong>
+    for <strong style="color:var(--text-mid)">${escHtml(m?.full_name||'Unknown member')}</strong>
+  </p>`;
+
+  if (r.request_type==='update' && r.proposed_changes) {
+    const changes = r.proposed_changes;
+    const rows = Object.entries(changes).map(([k,v])=>`
+      <tr>
+        <td class="diff-field">${escHtml(k.replace(/_/g,' '))}</td>
+        <td class="diff-old">${escHtml(v.old||'—')}</td>
+        <td class="diff-new">${escHtml(v.new||'—')}</td>
+      </tr>`).join('');
+    body += `<table class="diff-table">
+      <thead><tr><th>Field</th><th>Current value</th><th>Proposed</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  } else if (r.request_type==='delete') {
+    body += `<div style="padding:12px 16px;background:var(--cream);border-radius:6px;font-size:14px;color:var(--text-mid);">
+      <strong>Reason:</strong> ${escHtml(r.proposed_changes?.reason||'No reason provided')}
+    </div>`;
+  }
+
+  document.getElementById('req-modal-body').innerHTML = body;
+
+  const approveBtn = document.getElementById('req-approve-btn');
+  const rejectBtn = document.getElementById('req-reject-btn');
+  approveBtn.textContent = r.request_type==='delete' ? 'Approve Removal' : 'Approve Changes';
+  approveBtn.onclick = () => handleRequest(id, 'approve');
+  rejectBtn.onclick = () => handleRequest(id, 'reject');
+
+  document.getElementById('request-modal').classList.add('open');
 }
 
-function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast ' + type;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+async function handleRequest(id, action) {
+  const r = allRequests.find(x=>x.id===id);
+  if (!r) return;
+
+  if (action==='approve') {
+    if (r.request_type==='update' && r.proposed_changes) {
+      const updates = {};
+      Object.entries(r.proposed_changes).forEach(([k,v])=>{ updates[k]=v.new; });
+      await db.from('family_members').update({...updates, updated_at:new Date().toISOString()}).eq('id',r.member_id);
+      const idx=allMembers.findIndex(x=>x.id===r.member_id);
+      if (idx>-1) allMembers[idx]={...allMembers[idx],...updates};
+    } else if (r.request_type==='delete') {
+      await db.from('family_members').delete().eq('id',r.member_id);
+      allMembers=allMembers.filter(x=>x.id!==r.member_id);
+    }
+    showToast('Request approved','success');
+  } else {
+    showToast('Request rejected','info');
+  }
+
+  await db.from('member_requests').update({ status:action==='approve'?'approved':'rejected', reviewed_at:new Date().toISOString() }).eq('id',id);
+  allRequests.find(x=>x.id===id).status=action==='approve'?'approved':'rejected';
+  closeRequestModal(); updateCounts(); renderCards();
+}
+
+function closeRequestModal() { document.getElementById('request-modal').classList.remove('open'); }
+
+// ── Init ──
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) showAdmin(session.user);
 }
 
 init();

@@ -4,419 +4,156 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Family Tree</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/family-chart@0.1.2/family-chart.js"></script>
+<script src="config.js"></script>
+<script src="shared.js"></script>
 <style>
-  :root {
-    --cream: #faf7f2;
-    --warm-white: #fff9f0;
-    --brown-dark: #2c1810;
-    --brown-mid: #6b3d2e;
-    --brown-light: #c4956a;
-    --brown-pale: #e8d5c0;
-    --green-deep: #2d4a3e;
-    --green-mid: #4a7c6f;
-    --green-pale: #d4e6e1;
-    --gold: #b8860b;
-    --gold-light: #f0d080;
-    --text-dark: #1a0f0a;
-    --text-mid: #4a3728;
-    --text-light: #8a6a55;
-    --border: #d4c4b0;
-  }
+  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Lato', sans-serif;
-    background-color: var(--cream);
-    color: var(--text-dark);
-    min-height: 100vh;
-  }
-
-  /* ── Header ── */
-  header {
-    background: var(--brown-dark);
-    padding: 20px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 3px solid var(--gold);
-  }
-
-  .header-title {
-    font-family: 'Playfair Display', serif;
-    color: var(--gold-light);
-    font-size: 26px;
-    letter-spacing: 1px;
-  }
-
-  .header-subtitle {
-    font-family: 'Lato', sans-serif;
-    color: var(--brown-pale);
-    font-size: 12px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-
-  .header-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-family: 'Lato', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    border: none;
-    transition: all 0.2s;
-  }
-
-  .btn-gold {
-    background: var(--gold);
-    color: var(--brown-dark);
-  }
-  .btn-gold:hover { background: var(--gold-light); }
-
-  .btn-outline {
-    background: transparent;
-    color: var(--brown-pale);
-    border: 1px solid var(--brown-light);
-  }
-  .btn-outline:hover { background: rgba(255,255,255,0.08); }
-
-  /* ── Search & Filters ── */
   .toolbar {
     background: var(--warm-white);
     border-bottom: 1px solid var(--border);
-    padding: 14px 40px;
+    padding: 12px 40px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     flex-wrap: wrap;
+    flex-shrink: 0;
   }
-
-  .search-wrap {
-    position: relative;
-    flex: 1;
-    min-width: 220px;
-    max-width: 380px;
-  }
-
+  .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
   .search-wrap input {
-    width: 100%;
-    padding: 9px 16px 9px 40px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-family: 'Lato', sans-serif;
-    font-size: 14px;
-    background: white;
-    color: var(--text-dark);
-    outline: none;
+    width: 100%; padding: 8px 14px 8px 36px;
+    border: 1px solid var(--border); border-radius: 4px;
+    font-family: 'Lato', sans-serif; font-size: 14px;
+    background: white; color: var(--text-dark); outline: none;
     transition: border-color 0.2s;
   }
   .search-wrap input:focus { border-color: var(--brown-mid); }
-
-  .search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-light);
-    font-size: 15px;
-  }
-
-  .toolbar-label {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--text-light);
-  }
-
-  .generation-filter {
-    display: flex;
-    gap: 6px;
-  }
-
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 16px; pointer-events: none; }
+  .toolbar-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-light); }
+  .gen-filters { display: flex; gap: 6px; flex-wrap: wrap; }
   .gen-btn {
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    background: white;
-    color: var(--text-mid);
-    cursor: pointer;
-    transition: all 0.2s;
+    padding: 5px 13px; border: 1px solid var(--border); border-radius: 20px;
+    font-size: 12px; font-weight: 700; background: white; color: var(--text-mid);
+    cursor: pointer; transition: all 0.2s;
   }
-  .gen-btn.active, .gen-btn:hover {
-    background: var(--brown-dark);
-    color: var(--gold-light);
-    border-color: var(--brown-dark);
-  }
-
-  .member-count {
-    margin-left: auto;
-    font-size: 13px;
-    color: var(--text-light);
-  }
+  .gen-btn.active, .gen-btn:hover { background: var(--brown-dark); color: var(--gold-light); border-color: var(--brown-dark); }
+  .member-count { margin-left: auto; font-size: 13px; color: var(--text-light); }
   .member-count span { font-weight: 700; color: var(--text-mid); }
 
-  /* ── Tree container ── */
   #tree-container {
-    width: 100%;
-    height: calc(100vh - 140px);
-    overflow: hidden;
-    position: relative;
-    background: var(--cream);
-    background-image:
-      radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+    flex: 1; overflow: hidden; position: relative;
+    background-color: var(--cream);
+    background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
     background-size: 28px 28px;
   }
+  #tree-svg { width: 100%; height: 100%; }
 
-  #tree-svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  /* ── family-chart card overrides ── */
-  .card {
-    cursor: pointer;
-    transition: filter 0.2s;
-  }
-  .card:hover { filter: brightness(1.05); }
-
-  /* ── Empty / Loading states ── */
   .state-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
     pointer-events: none;
   }
-
   .state-overlay.hidden { display: none; }
+  .state-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text-mid); }
+  .state-sub { font-size: 14px; color: var(--text-light); text-align: center; max-width: 300px; line-height: 1.6; }
 
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--brown-pale);
-    border-top-color: var(--brown-mid);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .state-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    color: var(--text-mid);
-  }
-  .state-sub {
-    font-size: 14px;
-    color: var(--text-light);
-    text-align: center;
-    max-width: 320px;
-    line-height: 1.6;
-  }
-
-  /* ── Member detail panel ── */
+  /* Detail panel */
   .detail-panel {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 300px;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(44,24,16,0.12);
-    overflow: hidden;
-    transform: translateX(340px);
-    transition: transform 0.3s ease;
-    z-index: 100;
+    position: absolute; top: 20px; right: 20px; width: 300px;
+    background: white; border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: var(--shadow); overflow: hidden;
+    transform: translateX(340px); transition: transform 0.3s ease; z-index: 100;
   }
   .detail-panel.open { transform: translateX(0); }
-
-  .detail-photo {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    display: block;
-    background: var(--brown-pale);
-  }
-
+  .detail-photo-wrap { position: relative; }
+  .detail-photo { width: 100%; height: 170px; object-fit: cover; display: block; }
   .detail-photo-placeholder {
-    width: 100%;
-    height: 180px;
+    width: 100%; height: 170px;
     background: linear-gradient(135deg, var(--brown-pale), var(--green-pale));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 56px;
-    color: var(--brown-light);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif; font-size: 52px; color: var(--brown-light);
   }
-
-  .detail-body { padding: 20px; }
-
-  .detail-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    color: var(--text-dark);
-    line-height: 1.2;
-  }
-
-  .detail-nickname {
-    font-size: 13px;
-    color: var(--text-light);
-    margin-top: 2px;
-    font-style: italic;
-  }
-
-  .detail-meta {
-    margin-top: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .detail-row {
-    display: flex;
-    gap: 10px;
-    font-size: 13px;
-  }
-
-  .detail-row-label {
-    font-weight: 700;
-    color: var(--text-light);
-    text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 1px;
-    min-width: 70px;
-    padding-top: 1px;
-  }
-
-  .detail-row-value { color: var(--text-mid); line-height: 1.5; }
-
-  .detail-bio {
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-    font-size: 13px;
-    color: var(--text-mid);
-    line-height: 1.7;
-  }
-
   .detail-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 28px;
-    height: 28px;
-    background: rgba(0,0,0,0.4);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
+    position: absolute; top: 8px; right: 8px;
+    width: 28px; height: 28px; background: rgba(0,0,0,0.45); color: white;
+    border: none; border-radius: 50%; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
   }
+  .detail-body { padding: 18px; }
+  .detail-name { font-family: 'Playfair Display', serif; font-size: 19px; color: var(--text-dark); line-height: 1.2; }
+  .detail-nickname { font-size: 13px; color: var(--text-light); font-style: italic; margin-top: 2px; }
+  .detail-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .detail-meta { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+  .detail-row { display: flex; gap: 8px; font-size: 13px; }
+  .detail-row-label { font-weight: 700; color: var(--text-light); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; min-width: 72px; padding-top: 1px; }
+  .detail-row-value { color: var(--text-mid); line-height: 1.5; word-break: break-word; }
+  .detail-bio { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-mid); line-height: 1.7; }
+  .detail-social { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .detail-social a { font-size: 12px; color: var(--brown-mid); text-decoration: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 12px; transition: all 0.2s; }
+  .detail-social a:hover { background: var(--brown-dark); color: var(--gold-light); border-color: var(--brown-dark); }
+  .detail-actions { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
 
-  .unlinked-section {
-    background: var(--warm-white);
-    border-top: 1px solid var(--border);
-    padding: 20px 40px;
-  }
-  .unlinked-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 16px;
-    color: var(--text-mid);
-    margin-bottom: 12px;
-  }
-  .unlinked-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+  /* Unlinked section */
+  .unlinked-bar { background: var(--warm-white); border-top: 1px solid var(--border); padding: 16px 40px; flex-shrink: 0; }
+  .unlinked-title { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--text-mid); margin-bottom: 10px; }
+  .unlinked-chips { display: flex; flex-wrap: wrap; gap: 7px; }
   .unlinked-chip {
-    padding: 6px 14px;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    font-size: 13px;
-    color: var(--text-mid);
-    cursor: pointer;
-    transition: all 0.2s;
+    padding: 5px 14px; background: white; border: 1px solid var(--border);
+    border-radius: 20px; font-size: 13px; color: var(--text-mid); cursor: pointer; transition: all 0.2s;
   }
-  .unlinked-chip:hover {
-    background: var(--brown-dark);
-    color: var(--gold-light);
-    border-color: var(--brown-dark);
-  }
+  .unlinked-chip:hover { background: var(--brown-dark); color: var(--gold-light); border-color: var(--brown-dark); }
 
-  /* ── Zoom controls ── */
-  .zoom-controls {
-    position: absolute;
-    bottom: 24px;
-    left: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    z-index: 50;
-  }
+  /* Zoom */
+  .zoom-controls { position: absolute; bottom: 20px; left: 20px; display: flex; flex-direction: column; gap: 4px; z-index: 50; }
   .zoom-btn {
-    width: 36px;
-    height: 36px;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-mid);
-    transition: all 0.15s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    width: 34px; height: 34px; background: white; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 17px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; color: var(--text-mid);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: all 0.15s;
   }
   .zoom-btn:hover { background: var(--brown-dark); color: var(--gold-light); }
 
+  /* Request edit modal */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(44,24,16,0.5); z-index: 500;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: white; border-radius: 10px; width: 100%;
+    max-width: 560px; max-height: 88vh; overflow-y: auto;
+    padding: 32px; position: relative;
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--brown-dark); margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--text-light); margin-bottom: 24px; line-height: 1.5; }
+  .modal-close { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; background: var(--cream); border: 1px solid var(--border); border-radius: 50%; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .diff-row { display: grid; grid-template-columns: 120px 1fr 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--cream); font-size: 13px; align-items: start; }
+  .diff-label { font-weight: 700; color: var(--text-light); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding-top: 2px; }
+  .diff-old { color: var(--text-light); text-decoration: line-through; }
+  .diff-new { color: var(--green-deep); font-weight: 700; }
+  .modal-footer { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
+
   @media (max-width: 600px) {
-    header { padding: 14px 20px; }
-    .header-title { font-size: 20px; }
-    .toolbar { padding: 10px 20px; }
+    .toolbar { padding: 10px 16px; }
     .detail-panel { width: calc(100vw - 32px); right: 16px; }
+    .unlinked-bar { padding: 14px 16px; }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <div class="header-title" id="tree-title">Family Tree</div>
-    <div class="header-subtitle">Our Heritage &amp; History</div>
+<header class="site-header">
+  <div class="logo">
+    <div class="logo-title" id="site-title"></div>
+    <div class="logo-sub" id="site-tagline"></div>
   </div>
   <div class="header-actions">
-    <a href="submit.html" class="btn btn-gold">+ Add Yourself</a>
+    <a id="add-btn" href="submit.html" class="btn btn-gold">+ Add Yourself</a>
     <a href="admin.html" class="btn btn-outline">Admin</a>
   </div>
 </header>
@@ -427,10 +164,8 @@
     <input type="text" id="search-input" placeholder="Search by name…" oninput="filterTree()"/>
   </div>
   <span class="toolbar-label">Generation</span>
-  <div class="generation-filter" id="gen-filter"></div>
-  <div class="member-count">
-    <span id="member-count">0</span> members
-  </div>
+  <div class="gen-filters" id="gen-filters"></div>
+  <div class="member-count"><span id="member-count">0</span> members</div>
 </div>
 
 <div id="tree-container">
@@ -439,9 +174,8 @@
     <div class="state-title">Loading the family tree…</div>
   </div>
   <div class="state-overlay hidden" id="empty-state">
-    <div class="state-title">No approved members yet</div>
+    <div class="state-title">No members yet</div>
     <div class="state-sub">Once the admin approves submissions, the family tree will appear here.</div>
-    <a href="submit.html" class="btn btn-gold" style="pointer-events:all; margin-top:8px;">Be the first to add yourself</a>
   </div>
   <div id="tree-svg"></div>
   <div class="zoom-controls">
@@ -452,32 +186,84 @@
 </div>
 
 <div id="unlinked-wrap" style="display:none">
-  <div class="unlinked-section">
+  <div class="unlinked-bar">
     <div class="unlinked-title">Members with unknown connections</div>
     <div class="unlinked-chips" id="unlinked-chips"></div>
   </div>
 </div>
 
+<footer class="site-footer" id="site-footer"></footer>
+
 <!-- Detail panel -->
 <div class="detail-panel" id="detail-panel">
-  <button class="detail-close" onclick="closeDetail()">×</button>
-  <div id="detail-photo-wrap"></div>
+  <div class="detail-photo-wrap">
+    <div id="detail-photo-slot"></div>
+    <button class="detail-close" onclick="closeDetail()">×</button>
+  </div>
   <div class="detail-body">
     <div class="detail-name" id="d-name"></div>
     <div class="detail-nickname" id="d-nickname"></div>
+    <div class="detail-badges" id="d-badges"></div>
     <div class="detail-meta" id="d-meta"></div>
     <div class="detail-bio" id="d-bio" style="display:none"></div>
+    <div class="detail-social" id="d-social"></div>
+  </div>
+  <div class="detail-actions" id="d-actions"></div>
+</div>
+
+<!-- Edit request modal -->
+<div class="modal-backdrop" id="edit-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEditModal()">×</button>
+    <div class="modal-title">Request an Edit</div>
+    <div class="modal-sub" id="edit-modal-sub"></div>
+    <div id="edit-form-fields" class="form-grid"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-dark" onclick="submitEditRequest()">Submit Request</button>
+    </div>
   </div>
 </div>
 
-<script src="config.js"></script>
-<script>
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- Delete request modal -->
+<div class="modal-backdrop" id="delete-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeDeleteModal()">×</button>
+    <div class="modal-title">Request Removal</div>
+    <div class="modal-sub" id="delete-modal-sub"></div>
+    <div class="field">
+      <label>Reason for removal <span class="req">*</span></label>
+      <textarea id="delete-reason" placeholder="Please explain why this person should be removed from the family tree…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="submitDeleteRequest()">Submit Removal Request</button>
+    </div>
+  </div>
+</div>
 
+<div class="toast" id="toast"></div>
+
+<script>
 let allMembers = [], allRelationships = [], allMarriages = [];
-let chart = null;
 let currentZoom = 1;
+let currentUser = null;
+let activeDetailId = null;
+
+// Set site labels
+document.getElementById('site-title').textContent = SITE_CONFIG.familyName;
+document.getElementById('site-tagline').textContent = SITE_CONFIG.tagline;
+
+// Add invite token to submit link
+const token = new URLSearchParams(location.search).get('token') || '';
+document.getElementById('add-btn').href = 'submit.html' + (token ? '?token=' + token : '');
+
+async function init() {
+  renderFooter();
+  const { data: { session } } = await db.auth.getSession();
+  currentUser = session?.user || null;
+  await loadTree();
+}
 
 async function loadTree() {
   try {
@@ -486,10 +272,10 @@ async function loadTree() {
       db.from('relationships').select('*').eq('approved', true).eq('is_visible', true),
       db.from('marriages').select('*').eq('approved', true).eq('is_visible', true)
     ]);
-
     allMembers = mRes.data || [];
     allRelationships = rRes.data || [];
     allMarriages = marRes.data || [];
+    window._relationships = allRelationships;
 
     document.getElementById('loading-state').classList.add('hidden');
     document.getElementById('member-count').textContent = allMembers.length;
@@ -498,8 +284,7 @@ async function loadTree() {
       document.getElementById('empty-state').classList.remove('hidden');
       return;
     }
-
-    buildGenerationFilter();
+    buildGenFilter();
     renderTree(allMembers, allRelationships, allMarriages);
     renderUnlinked();
   } catch(e) {
@@ -509,22 +294,19 @@ async function loadTree() {
   }
 }
 
-function buildGenerationFilter() {
-  const gens = [...new Set(allMembers.map(m => m.generation_number).filter(Boolean))].sort();
-  const wrap = document.getElementById('gen-filter');
+function buildGenFilter() {
+  const gens = [...new Set(allMembers.map(m => m.generation_number).filter(Boolean))].sort((a,b)=>a-b);
+  const wrap = document.getElementById('gen-filters');
   wrap.innerHTML = '';
-  const allBtn = document.createElement('button');
-  allBtn.className = 'gen-btn active';
-  allBtn.textContent = 'All';
-  allBtn.onclick = () => { setActiveGen(allBtn); filterTree(); };
-  wrap.appendChild(allBtn);
+  const all = document.createElement('button');
+  all.className = 'gen-btn active'; all.textContent = 'All';
+  all.onclick = () => { setActiveGen(all); filterTree(); };
+  wrap.appendChild(all);
   gens.forEach(g => {
-    const btn = document.createElement('button');
-    btn.className = 'gen-btn';
-    btn.textContent = 'Gen ' + g;
-    btn.dataset.gen = g;
-    btn.onclick = () => { setActiveGen(btn); filterTree(); };
-    wrap.appendChild(btn);
+    const b = document.createElement('button');
+    b.className = 'gen-btn'; b.textContent = 'Gen ' + g; b.dataset.gen = g;
+    b.onclick = () => { setActiveGen(b); filterTree(); };
+    wrap.appendChild(b);
   });
 }
 
@@ -534,186 +316,182 @@ function setActiveGen(el) {
 }
 
 function filterTree() {
-  const query = document.getElementById('search-input').value.toLowerCase();
+  const q = document.getElementById('search-input').value.toLowerCase();
   const activeGen = document.querySelector('.gen-btn.active');
   const genFilter = activeGen?.dataset?.gen;
-
   let filtered = allMembers.filter(m => {
-    const nameMatch = (m.full_name || '').toLowerCase().includes(query) ||
-                      (m.nickname || '').toLowerCase().includes(query);
-    const genMatch = !genFilter || String(m.generation_number) === genFilter;
-    return nameMatch && genMatch;
+    const nm = (m.full_name + ' ' + (m.nickname||'')).toLowerCase().includes(q);
+    const gn = !genFilter || String(m.generation_number) === genFilter;
+    return nm && gn;
   });
-
   const ids = new Set(filtered.map(m => m.id));
-  const filteredRel = allRelationships.filter(r => ids.has(r.person_a_id) && ids.has(r.person_b_id));
-  const filteredMar = allMarriages.filter(m => ids.has(m.person1_id) && ids.has(m.person2_id));
-  renderTree(filtered, filteredRel, filteredMar);
+  renderTree(filtered,
+    allRelationships.filter(r => ids.has(r.person_a_id) && ids.has(r.person_b_id)),
+    allMarriages.filter(m => ids.has(m.person1_id) && ids.has(m.person2_id))
+  );
   document.getElementById('member-count').textContent = filtered.length;
 }
 
 function renderTree(members, relationships, marriages) {
   const container = document.getElementById('tree-svg');
   container.innerHTML = '';
-
   const linked = members.filter(m => !m.is_unlinked);
-  if (linked.length === 0) return;
+  if (!linked.length) return;
 
-  // Build family-chart data format
   const data = linked.map(m => {
     const parents = relationships
       .filter(r => r.person_b_id === m.id && r.relationship_type === 'parent')
       .map(r => r.person_a_id);
-
     const spouses = marriages
       .filter(mar => mar.person1_id === m.id || mar.person2_id === m.id)
       .map(mar => mar.person1_id === m.id ? mar.person2_id : mar.person1_id);
-
+    const children = relationships
+      .filter(r => r.person_a_id === m.id && r.relationship_type === 'parent')
+      .map(r => r.person_b_id);
     return {
       id: m.id,
       data: {
         'first name': m.nickname || m.full_name.split(' ')[0],
         'last name': m.full_name.split(' ').slice(1).join(' '),
         'birthday': m.hide_birth_date ? '' : (m.birth_date || ''),
-        'avatar': m.hide_photo ? '' : (m.photo_url || ''),
+        'avatar': (m.hide_photo ? '' : (m.photo_url || '')),
         'gender': m.gender || 'unknown',
-        '_fullName': m.full_name,
-        '_id': m.id,
-        '_isLiving': m.is_living,
-        '_suffix': m.suffix || ''
       },
-      rels: {
-        father: parents[0] || null,
-        mother: parents[1] || null,
-        spouses: spouses,
-        children: relationships
-          .filter(r => r.person_a_id === m.id && r.relationship_type === 'parent')
-          .map(r => r.person_b_id)
-      }
+      rels: { father: parents[0]||null, mother: parents[1]||null, spouses, children }
     };
   });
 
   try {
-    const f3 = window.f3;
-    if (!f3) { renderFallback(linked, container); return; }
-
-    const cardDim = { w: 160, h: 80, text_x: 15, text_y: 15, img_w: 60, img_h: 60, img_x: 5, img_y: 10 };
-
-    chart = f3.createChart('#tree-svg', data)
-      .setCardXSpacing(40)
-      .setCardYSpacing(60)
-      .setCardDim(cardDim)
-      .setOrientationVertical()
-      .init();
-
-    // Click handler
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('click', function() {
-        const id = this.dataset?.id;
-        if (id) openDetail(id);
+    if (window.f3) {
+      window.f3.createChart('#tree-svg', data)
+        .setCardXSpacing(40).setCardYSpacing(60)
+        .setOrientationVertical().init();
+      document.querySelectorAll('.card').forEach(card => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function() {
+          const id = this.getAttribute('data-id') || this.id;
+          if (id) openDetail(id);
+        });
       });
-    });
-  } catch(e) {
-    renderFallback(linked, container);
-  }
+    } else {
+      renderFallback(linked, container);
+    }
+  } catch(e) { renderFallback(linked, container); }
 }
 
 function renderFallback(members, container) {
-  // Simple SVG fallback if family-chart fails
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('width', '100%');
-  svg.setAttribute('height', '100%');
-
-  const cols = Math.ceil(Math.sqrt(members.length));
-  members.forEach((m, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = 60 + col * 200;
-    const y = 60 + row * 120;
-
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
+  const cols = Math.max(1, Math.ceil(Math.sqrt(members.length)));
+  members.forEach((m,i) => {
+    const x = 40 + (i % cols) * 200, y = 40 + Math.floor(i / cols) * 110;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     g.style.cursor = 'pointer';
     g.addEventListener('click', () => openDetail(m.id));
-
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', x); rect.setAttribute('y', y);
-    rect.setAttribute('width', 160); rect.setAttribute('height', 70);
-    rect.setAttribute('rx', 6);
-    rect.setAttribute('fill', '#fff');
-    rect.setAttribute('stroke', '#d4c4b0');
-    rect.setAttribute('stroke-width', 1);
-
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', x + 80); text.setAttribute('y', y + 40);
-    text.setAttribute('text-anchor', 'middle');
-    text.setAttribute('font-family', 'Lato, sans-serif');
-    text.setAttribute('font-size', '13');
-    text.setAttribute('fill', '#2c1810');
-    text.textContent = m.full_name + (m.suffix ? ' ' + m.suffix : '');
-
-    g.appendChild(rect);
-    g.appendChild(text);
-    svg.appendChild(g);
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    Object.entries({x,y,width:170,height:70,rx:6,fill:'#fff',stroke:'#d4c4b0','stroke-width':1}).forEach(([k,v])=>rect.setAttribute(k,v));
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    Object.entries({x:x+85,y:y+35,'text-anchor':'middle','font-family':'Lato,sans-serif','font-size':'13',fill:'#2c1810'}).forEach(([k,v])=>text.setAttribute(k,v));
+    text.textContent = m.full_name + (m.suffix?' '+m.suffix:'');
+    g.appendChild(rect); g.appendChild(text); svg.appendChild(g);
   });
-
   container.appendChild(svg);
 }
 
 function renderUnlinked() {
   const unlinked = allMembers.filter(m => m.is_unlinked);
   const wrap = document.getElementById('unlinked-wrap');
-  const chips = document.getElementById('unlinked-chips');
-  if (unlinked.length === 0) { wrap.style.display = 'none'; return; }
+  if (!unlinked.length) { wrap.style.display='none'; return; }
   wrap.style.display = 'block';
+  const chips = document.getElementById('unlinked-chips');
   chips.innerHTML = '';
   unlinked.forEach(m => {
-    const chip = document.createElement('div');
-    chip.className = 'unlinked-chip';
-    chip.textContent = m.full_name + (m.suffix ? ' ' + m.suffix : '');
-    chip.onclick = () => openDetail(m.id);
-    chips.appendChild(chip);
+    const c = document.createElement('div');
+    c.className = 'unlinked-chip';
+    c.textContent = m.full_name + (m.suffix?' '+m.suffix:'');
+    c.onclick = () => openDetail(m.id);
+    chips.appendChild(c);
   });
 }
 
 function openDetail(id) {
   const m = allMembers.find(x => x.id === id);
   if (!m) return;
+  activeDetailId = id;
 
-  const photoWrap = document.getElementById('detail-photo-wrap');
+  // Photo
+  const slot = document.getElementById('detail-photo-slot');
   if (m.photo_url && !m.hide_photo) {
-    photoWrap.innerHTML = `<img class="detail-photo" src="${m.photo_url}" alt="${m.full_name}" onerror="this.style.display='none'"/>`;
+    slot.innerHTML = `<img class="detail-photo" src="${m.photo_url}" alt="${escHtml(m.full_name)}" onerror="this.style.display='none'"/>`;
   } else {
-    const initials = m.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    photoWrap.innerHTML = `<div class="detail-photo-placeholder">${initials}</div>`;
+    slot.innerHTML = `<div class="detail-photo-placeholder">${initials(m.full_name)}</div>`;
   }
 
-  document.getElementById('d-name').textContent = m.full_name + (m.suffix ? ' ' + m.suffix : '');
+  document.getElementById('d-name').textContent = m.full_name + (m.suffix?' '+m.suffix:'');
   const nick = document.getElementById('d-nickname');
   nick.textContent = m.nickname ? `"${m.nickname}"` : '';
   nick.style.display = m.nickname ? 'block' : 'none';
 
+  // Badges
+  const badges = document.getElementById('d-badges');
+  badges.innerHTML = '';
+  if (!m.is_living) badges.innerHTML += `<span class="badge badge-deceased">Deceased</span>`;
+  if (m.is_unlinked) badges.innerHTML += `<span class="badge badge-pending">Unlinked</span>`;
+
+  // Meta rows
   const meta = document.getElementById('d-meta');
   meta.innerHTML = '';
-
   const rows = [
-    ['Born', m.hide_birth_date ? '—' : (m.birth_date ? formatDate(m.birth_date) : '—')],
-    ['Birthplace', m.hide_birth_place ? '—' : (m.birth_place || '—')],
-    ['Status', m.is_living ? 'Living' : (m.death_date ? 'Passed ' + formatDate(m.death_date) : 'Deceased')],
+    ['Born', !m.hide_birth_date && m.birth_date ? formatDate(m.birth_date) : null],
+    ['Birthplace', !m.hide_birth_place && m.birth_place ? m.birth_place : null],
+    ['Passed', !m.is_living && m.death_date ? formatDate(m.death_date) : null],
   ];
-  rows.forEach(([label, val]) => {
-    if (val === '—') return;
-    meta.innerHTML += `<div class="detail-row">
-      <div class="detail-row-label">${label}</div>
-      <div class="detail-row-value">${val}</div>
-    </div>`;
+  rows.forEach(([l,v]) => {
+    if (!v) return;
+    meta.innerHTML += `<div class="detail-row"><div class="detail-row-label">${l}</div><div class="detail-row-value">${escHtml(v)}</div></div>`;
   });
 
+  // Find parents via relationships
+  const parentIds = allRelationships.filter(r => r.person_b_id === m.id && r.relationship_type === 'parent').map(r => r.person_a_id);
+  const parentNames = parentIds.map(pid => allMembers.find(x=>x.id===pid)?.full_name).filter(Boolean);
+  if (parentNames.length) {
+    meta.innerHTML += `<div class="detail-row"><div class="detail-row-label">Parents</div><div class="detail-row-value">${escHtml(parentNames.join(' & '))}</div></div>`;
+  }
+
+  // Spouse
+  const spouseMar = allMarriages.filter(mar => mar.person1_id===m.id || mar.person2_id===m.id);
+  spouseMar.forEach(mar => {
+    const sid = mar.person1_id===m.id ? mar.person2_id : mar.person1_id;
+    const sp = allMembers.find(x=>x.id===sid);
+    if (!sp) return;
+    const label = mar.status === 'married' ? 'Spouse' : cap(mar.status);
+    meta.innerHTML += `<div class="detail-row"><div class="detail-row-label">${label}</div><div class="detail-row-value">${escHtml(sp.full_name)}</div></div>`;
+  });
+
+  // Bio
   const bio = document.getElementById('d-bio');
-  if (m.bio && !m.hide_bio) {
-    bio.textContent = m.bio;
-    bio.style.display = 'block';
-  } else {
-    bio.style.display = 'none';
+  if (m.bio && !m.hide_bio) { bio.textContent = m.bio; bio.style.display='block'; }
+  else bio.style.display='none';
+
+  // Social links
+  const social = document.getElementById('d-social');
+  social.innerHTML = '';
+  if (m.contact_email) social.innerHTML += `<a href="mailto:${escHtml(m.contact_email)}">✉ Email</a>`;
+  if (m.facebook_url) social.innerHTML += `<a href="${escHtml(m.facebook_url)}" target="_blank" rel="noopener">f Facebook</a>`;
+
+  // Actions — show edit/delete only if user owns this record or submitted it
+  const actions = document.getElementById('d-actions');
+  actions.innerHTML = '';
+  if (currentUser) {
+    const isOwn = m.submitted_by_uid === currentUser.id;
+    const isDeceased = !m.is_living;
+    const submittedDeceased = isDeceased && m.submitted_by_uid === currentUser.id;
+    if (isOwn || submittedDeceased) {
+      actions.innerHTML = `
+        <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;" onclick="openEditModal('${m.id}')">Request Edit</button>
+        <button class="btn btn-danger" style="font-size:12px;padding:7px 14px;" onclick="openDeleteModal('${m.id}')">Request Removal</button>
+      `;
+    }
   }
 
   document.getElementById('detail-panel').classList.add('open');
@@ -721,23 +499,109 @@ function openDetail(id) {
 
 function closeDetail() {
   document.getElementById('detail-panel').classList.remove('open');
+  activeDetailId = null;
 }
 
-function formatDate(d) {
-  if (!d) return '';
-  const date = new Date(d);
-  return date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+// ── Edit request modal ──
+const EDITABLE_FIELDS = [
+  { key:'full_name', label:'Full name', type:'text' },
+  { key:'nickname', label:'Nickname', type:'text' },
+  { key:'suffix', label:'Suffix', type:'text' },
+  { key:'birth_date', label:'Birth date', type:'date' },
+  { key:'death_date', label:'Death date', type:'date' },
+  { key:'birth_place', label:'Birthplace', type:'text' },
+  { key:'bio', label:'Bio', type:'textarea' },
+  { key:'photo_url', label:'Photo URL', type:'text' },
+  { key:'contact_email', label:'Contact email', type:'text' },
+  { key:'facebook_url', label:'Facebook URL', type:'text' },
+];
+
+function openEditModal(id) {
+  const m = allMembers.find(x=>x.id===id);
+  if (!m) return;
+  document.getElementById('edit-modal-sub').textContent = `Editing: ${m.full_name}${m.suffix?' '+m.suffix:''}. Changes will be reviewed by the admin before going live.`;
+  const fields = document.getElementById('edit-form-fields');
+  fields.innerHTML = '';
+  EDITABLE_FIELDS.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'field' + (f.type==='textarea'?' span-2':'');
+    div.innerHTML = `<label>${f.label}</label>`;
+    let el;
+    if (f.type==='textarea') { el=document.createElement('textarea'); el.rows=3; }
+    else { el=document.createElement('input'); el.type=f.type; }
+    el.id = 'edit-field-'+f.key;
+    el.value = m[f.key]||'';
+    div.appendChild(el);
+    fields.appendChild(div);
+  });
+  document.getElementById('edit-modal').classList.add('open');
 }
 
-function zoomIn() { currentZoom = Math.min(2, currentZoom + 0.15); applyZoom(); }
-function zoomOut() { currentZoom = Math.max(0.3, currentZoom - 0.15); applyZoom(); }
-function zoomReset() { currentZoom = 1; applyZoom(); }
+async function submitEditRequest() {
+  if (!currentUser) { showToast('Please sign in first', 'error'); return; }
+  const m = allMembers.find(x=>x.id===activeDetailId);
+  if (!m) return;
+  const changes = {};
+  EDITABLE_FIELDS.forEach(f => {
+    const newVal = document.getElementById('edit-field-'+f.key)?.value?.trim()||null;
+    const oldVal = m[f.key]||null;
+    if (newVal !== oldVal) changes[f.key] = { old: oldVal, new: newVal };
+  });
+  if (!Object.keys(changes).length) { showToast('No changes detected', 'info'); return; }
+  const { error } = await db.from('member_requests').insert([{
+    request_type: 'update',
+    member_id: m.id,
+    requester_uid: currentUser.id,
+    requester_name: currentUser.user_metadata?.full_name || currentUser.email,
+    requester_email: currentUser.email,
+    proposed_changes: changes,
+  }]);
+  if (error) { showToast('Error submitting request', 'error'); return; }
+  closeEditModal();
+  showToast('Edit request submitted! The admin will review it soon.', 'success');
+}
+
+function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
+
+// ── Delete request modal ──
+function openDeleteModal(id) {
+  const m = allMembers.find(x=>x.id===id);
+  if (!m) return;
+  document.getElementById('delete-modal-sub').textContent = `You are requesting removal of: ${m.full_name}${m.suffix?' '+m.suffix:''}. Please provide a reason.`;
+  document.getElementById('delete-reason').value = '';
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+async function submitDeleteRequest() {
+  if (!currentUser) { showToast('Please sign in first','error'); return; }
+  const reason = document.getElementById('delete-reason').value.trim();
+  if (!reason) { showToast('Please provide a reason','error'); return; }
+  const m = allMembers.find(x=>x.id===activeDetailId);
+  if (!m) return;
+  const { error } = await db.from('member_requests').insert([{
+    request_type: 'delete',
+    member_id: m.id,
+    requester_uid: currentUser.id,
+    requester_name: currentUser.user_metadata?.full_name || currentUser.email,
+    requester_email: currentUser.email,
+    proposed_changes: { reason },
+  }]);
+  if (error) { showToast('Error submitting request','error'); return; }
+  closeDeleteModal();
+  showToast('Removal request submitted. The admin will review it.','success');
+}
+
+function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('open'); }
+
+function zoomIn() { currentZoom = Math.min(2.5, currentZoom+0.15); applyZoom(); }
+function zoomOut() { currentZoom = Math.max(0.3, currentZoom-0.15); applyZoom(); }
+function zoomReset() { currentZoom=1; applyZoom(); }
 function applyZoom() {
   const svg = document.querySelector('#tree-svg svg');
-  if (svg) svg.style.transform = `scale(${currentZoom})`;
+  if (svg) { svg.style.transformOrigin='center top'; svg.style.transform=`scale(${currentZoom})`; }
 }
 
-loadTree();
+init();
 </script>
 </body>
 </html>
