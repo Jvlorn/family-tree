@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Family Tree</title>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="shared.js"></script>
+<style>
+  body { height:100vh; overflow:hidden; flex-direction:column; }
+
+  .toolbar { background:var(--warm-white); border-bottom:1px solid var(--border); padding:9px 32px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex-shrink:0; }
+  .search-wrap { position:relative; flex:1; min-width:180px; max-width:300px; }
+  .search-wrap input { width:100%; padding:7px 12px 7px 32px; border:1px solid var(--border); border-radius:4px; font-family:'Lato',sans-serif; font-size:13px; background:white; outline:none; transition:border-color .2s; }
+  .search-wrap input:focus { border-color:var(--brown-mid); }
+  .search-icon { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text-light); font-size:14px; pointer-events:none; }
+  .member-count { font-size:12px; color:var(--text-light); margin-left:auto; }
+  .member-count span { font-weight:700; color:var(--text-mid); }
+
+  #tree-container { flex:1; overflow:auto; position:relative; background-color:var(--cream); background-image:radial-gradient(circle at 1px 1px,var(--border) 1px,transparent 0); background-size:28px 28px; }
+  #tree-canvas { padding:40px; display:flex; flex-direction:column; gap:0; min-width:max-content; transform-origin:top left; }
+
+  .state-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+  .state-overlay.hidden { display:none; }
+  .state-title { font-family:'Playfair Display',serif; font-size:22px; color:var(--text-mid); }
+  .state-sub { font-size:14px; color:var(--text-light); text-align:center; max-width:300px; line-height:1.6; }
+
+  /* Detail panel */
+  .detail-panel { position:fixed; top:0; right:0; width:300px; height:100vh; background:white; border-left:1px solid var(--border); box-shadow:-4px 0 24px rgba(44,24,16,.1); overflow-y:auto; transform:translateX(310px); transition:transform .3s ease; z-index:200; display:flex; flex-direction:column; }
+  .detail-panel.open { transform:translateX(0); }
+  .d-photo { width:100%; height:170px; object-fit:cover; display:block; }
+  .d-photo-placeholder { width:100%; height:170px; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:52px; color:var(--brown-light); }
+  .d-photo-placeholder.male { background:linear-gradient(135deg,#dbeafe,#bfdbfe); }
+  .d-photo-placeholder.female { background:linear-gradient(135deg,#fce7f3,#fbcfe8); }
+  .d-photo-placeholder.unknown { background:linear-gradient(135deg,var(--brown-pale),var(--green-pale)); }
+  .d-close { position:absolute; top:9px; right:9px; width:27px; height:27px; background:rgba(0,0,0,.45); color:white; border:none; border-radius:50%; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }
+  .d-body { padding:16px; flex:1; }
+  .d-name { font-family:'Playfair Display',serif; font-size:19px; color:var(--text-dark); line-height:1.2; }
+  .d-nick { font-size:12px; color:var(--text-light); font-style:italic; margin-top:2px; }
+  .d-badges { display:flex; gap:5px; flex-wrap:wrap; margin-top:7px; }
+  .d-meta { margin-top:12px; display:flex; flex-direction:column; gap:7px; }
+  .d-row { display:flex; gap:7px; font-size:13px; }
+  .d-lbl { font-weight:700; color:var(--text-light); text-transform:uppercase; font-size:10px; letter-spacing:1px; min-width:64px; padding-top:2px; flex-shrink:0; }
+  .d-val { color:var(--text-mid); line-height:1.5; word-break:break-word; }
+  .d-bio { margin-top:11px; padding-top:11px; border-top:1px solid var(--border); font-size:13px; color:var(--text-mid); line-height:1.7; }
+  .d-social { margin-top:11px; display:flex; gap:7px; flex-wrap:wrap; }
+  .d-social a { font-size:11px; color:var(--brown-mid); text-decoration:none; border:1px solid var(--border); padding:4px 9px; border-radius:12px; transition:all .2s; }
+  .d-social a:hover { background:var(--brown-dark); color:var(--gold-light); border-color:var(--brown-dark); }
+  .d-actions { padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:6px; flex-wrap:wrap; }
+
+  /* Zoom */
+  .zoom-controls { position:fixed; bottom:18px; left:18px; display:flex; flex-direction:column; gap:4px; z-index:100; }
+  .zoom-btn { width:31px; height:31px; background:white; border:1px solid var(--border); border-radius:4px; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-mid); box-shadow:0 2px 6px rgba(0,0,0,.07); transition:all .15s; }
+  .zoom-btn:hover { background:var(--brown-dark); color:var(--gold-light); }
+
+  /* Legend */
+  .legend { position:fixed; bottom:18px; right:18px; background:white; border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:11px; color:var(--text-mid); z-index:100; box-shadow:var(--shadow); }
+  .legend-title { font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-light); margin-bottom:8px; font-size:10px; }
+  .legend-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+  .legend-line { width:28px; height:2px; flex-shrink:0; }
+  .legend-line.solid { background:var(--border); }
+  .legend-line.dashed { background:repeating-linear-gradient(90deg,#f87171 0,#f87171 5px,transparent 5px,transparent 8px); }
+  .legend-line.dotted { background:repeating-linear-gradient(90deg,var(--border) 0,var(--border) 5px,transparent 5px,transparent 9px); }
+
+  @media (max-width:600px) {
+    .detail-panel { width:100vw; }
+    .toolbar { padding:8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <div class="logo-title" id="site-title"></div>
+    <div class="logo-sub" id="site-tagline"></div>
+  </div>
+  <div class="header-actions">
+    <a id="add-btn" href="submit.html" class="btn btn-gold">+ Add Yourself</a>
+    <a href="admin.html" class="btn btn-outline">Admin</a>
+  </div>
+</header>
+
+<div class="user-bar" id="user-bar"></div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search-input" placeholder="Search by name…" oninput="filterTree()"/>
+  </div>
+  <div class="member-count"><span id="member-count">0</span> members</div>
+</div>
+
+<div id="tree-container">
+  <div class="state-overlay" id="loading-state">
+    <div class="spinner"></div>
+    <div class="state-title">Loading the family tree…</div>
+  </div>
+  <div class="state-overlay hidden" id="empty-state">
+    <div class="state-title">No members yet</div>
+    <div class="state-sub">Once the admin approves submissions, the tree will appear here.</div>
+  </div>
+  <div id="tree-canvas"></div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<!-- Detail panel -->
+<div class="detail-panel" id="detail-panel">
+  <div style="position:relative;">
+    <button class="d-close" onclick="closeDetail()">×</button>
+    <div id="d-photo-slot"></div>
+  </div>
+  <div class="d-body">
+    <div class="d-name" id="d-name"></div>
+    <div class="d-nick" id="d-nick"></div>
+    <div class="d-badges" id="d-badges"></div>
+    <div class="d-meta" id="d-meta"></div>
+    <div class="d-bio" id="d-bio" style="display:none"></div>
+    <div class="d-social" id="d-social"></div>
+  </div>
+  <div class="d-actions" id="d-actions"></div>
+</div>
+
+<!-- Edit request modal -->
+<div class="modal-backdrop" id="edit-modal">
+  <div class="modal" style="max-width:620px;">
+    <button class="modal-close" onclick="document.getElementById('edit-modal').classList.remove('open')">×</button>
+    <div class="modal-title">Request an Edit</div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;" id="edit-modal-sub"></p>
+    <div class="form-grid" id="edit-fields"></div>
+    <div style="margin-top:18px;">
+      <div class="section-title" style="margin-bottom:10px;">Add New Connections</div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:11px;line-height:1.5;">Only approved members can be linked. Existing connections are not removed here — contact the admin for removals.</p>
+      <div id="edit-conn-list"></div>
+      <button type="button" class="add-conn-btn" onclick="addEditConn()">+ Add connection</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('edit-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-dark" onclick="submitEditRequest()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete request modal -->
+<div class="modal-backdrop" id="delete-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('delete-modal').classList.remove('open')">×</button>
+    <div class="modal-title">Request Removal</div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;" id="delete-modal-sub"></p>
+    <div class="field"><label>Reason <span class="req">*</span></label><textarea id="delete-reason" placeholder="Why should this person be removed?"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('delete-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitDeleteRequest()">Submit Removal Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Report modal -->
+<div class="modal-backdrop" id="report-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('report-modal').classList.remove('open')">×</button>
+    <div class="modal-title">Report an Issue</div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;" id="report-modal-sub"></p>
+    <div class="field"><label>Describe the issue <span class="req">*</span></label><textarea id="report-reason" placeholder="What's wrong with this entry?"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('report-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-warn" onclick="submitReport()">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" onclick="zoomIn()">+</button>
+  <button class="zoom-btn" onclick="zoomReset()">⊡</button>
+  <button class="zoom-btn" onclick="zoomOut()">−</button>
+</div>
+
+<div class="legend">
+  <div class="legend-title">Legend</div>
+  <div class="legend-row"><div class="legend-line solid"></div><span>Married / Partner</span></div>
+  <div class="legend-row"><div class="legend-line dashed"></div><span>Divorced / Separated</span></div>
+  <div class="legend-row"><div class="legend-line dotted"></div><span>Adopted child</span></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allMembers=[], allRels=[], allMarriages=[];
+let currentUser=null, activeDetailId=null;
+let _scale=1;
+
+document.getElementById('site-title').textContent=SITE_CONFIG.familyName;
+document.getElementById('site-tagline').textContent=SITE_CONFIG.tagline;
+const urlToken=new URLSearchParams(location.search).get('token')||'';
+document.getElementById('add-btn').href='submit.html?token='+(urlToken||INVITE_TOKEN);
+
+async function init(){
+  renderFooter();
+  const{data:{session}}=await db.auth.getSession();
+  currentUser=session?.user||null;
+  if(currentUser) renderUserBar(currentUser);
+  await loadTree();
+}
+
+async function loadTree(){
+  try{
+    const[mR,rR,marR]=await Promise.all([
+      db.from('family_members').select('*').eq('approved',true).eq('is_private',false),
+      db.from('relationships').select('*').eq('approved',true).eq('is_visible',true),
+      db.from('marriages').select('*').eq('approved',true).eq('is_visible',true),
+    ]);
+    allMembers=mR.data||[]; allRels=rR.data||[]; allMarriages=marR.data||[];
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('member-count').textContent=allMembers.length;
+    if(!allMembers.length){document.getElementById('empty-state').classList.remove('hidden');return;}
+    renderTree(allMembers,allRels,allMarriages);
+  }catch(e){
+    console.error(e);
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('empty-state').classList.remove('hidden');
+  }
+}
+
+function renderTree(members,rels,marriages){
+  const canvas=document.getElementById('tree-canvas');
+  window.onNodeClick=(id)=>openDetail(id);
+  const renderer=new FamilyTreeRenderer(members,rels,marriages);
+  renderer.render(canvas);
+}
+
+function filterTree(){
+  const q=document.getElementById('search-input').value.toLowerCase();
+  const filtered=allMembers.filter(m=>(m.full_name+' '+(m.nickname||'')).toLowerCase().includes(q));
+  const ids=new Set(filtered.map(m=>m.id));
+  renderTree(filtered,
+    allRels.filter(r=>ids.has(r.person_a_id)&&ids.has(r.person_b_id)),
+    allMarriages.filter(m=>ids.has(m.person1_id)&&ids.has(m.person2_id))
+  );
+  document.getElementById('member-count').textContent=filtered.length;
+}
+
+function openDetail(id){
+  const m=allMembers.find(x=>x.id===id); if(!m) return;
+  activeDetailId=id;
+  const slot=document.getElementById('d-photo-slot');
+  const gc=m.gender||'unknown';
+  slot.innerHTML=m.photo_url&&!m.hide_photo
+    ?`<img class="d-photo" src="${escHtml(m.photo_url)}" alt="${escHtml(m.full_name)}" onerror="this.outerHTML='<div class=d-photo-placeholder ${gc}>${initials(m.full_name)}</div>'"/>`
+    :`<div class="d-photo-placeholder ${gc}">${initials(m.full_name)}</div>`;
+
+  document.getElementById('d-name').textContent=m.full_name+(m.suffix?' '+m.suffix:'');
+  const nick=document.getElementById('d-nick');
+  nick.textContent=m.nickname?`"${m.nickname}"`:''; nick.style.display=m.nickname?'block':'none';
+
+  const badges=document.getElementById('d-badges');
+  badges.innerHTML='';
+  if(!m.is_living) badges.innerHTML+='<span class="badge badge-deceased">✝ Deceased</span>';
+
+  const meta=document.getElementById('d-meta'); meta.innerHTML='';
+  const row=(l,v)=>{if(!v) return; meta.innerHTML+=`<div class="d-row"><div class="d-lbl">${l}</div><div class="d-val">${escHtml(v)}</div></div>`;};
+
+  if(!m.hide_birth_date&&m.birth_date) row('Born',formatDate(m.birth_date));
+  if(!m.hide_birth_place&&m.birth_place) row('Birthplace',m.birth_place);
+  if(!m.is_living&&m.death_date) row('Passed',formatDate(m.death_date));
+
+  // Parents (bidirectional)
+  const parentRels=allRels.filter(r=>r.person_b_id===m.id&&r.relationship_type==='parent');
+  parentRels.forEach(r=>{
+    const p=allMembers.find(x=>x.id===r.person_a_id);
+    if(p) row(r.is_biological===false?'Adoptive parent':'Parent',p.full_name+(p.suffix?' '+p.suffix:''));
+  });
+
+  // Children
+  const childRels=allRels.filter(r=>r.person_a_id===m.id&&r.relationship_type==='parent');
+  if(childRels.length){
+    const names=childRels.map(r=>{const c=allMembers.find(x=>x.id===r.person_b_id);return c?(c.full_name+(r.is_biological===false?' (adopted)':'')):null;}).filter(Boolean);
+    if(names.length) row('Children',names.join(', '));
+  }
+
+  // Spouses
+  allMarriages.filter(mar=>mar.person1_id===m.id||mar.person2_id===m.id).forEach(mar=>{
+    const sid=mar.person1_id===m.id?mar.person2_id:mar.person1_id;
+    const sp=allMembers.find(x=>x.id===sid);
+    if(sp){
+      const label=mar.status==='married'?'Spouse':cap(mar.status);
+      row(label,sp.full_name+(sp.suffix?' '+sp.suffix:''));
+    }
+  });
+
+  const bio=document.getElementById('d-bio');
+  if(m.bio&&!m.hide_bio){bio.textContent=m.bio;bio.style.display='block';}else bio.style.display='none';
+
+  const social=document.getElementById('d-social'); social.innerHTML='';
+  if(m.contact_email) social.innerHTML+=`<a href="mailto:${escHtml(m.contact_email)}">✉ Email</a>`;
+  if(m.facebook_url) social.innerHTML+=`<a href="${escHtml(m.facebook_url)}" target="_blank" rel="noopener">f Facebook</a>`;
+
+  const actions=document.getElementById('d-actions'); actions.innerHTML='';
+  actions.innerHTML+=`<button class="btn btn-warn" style="font-size:11px;padding:5px 11px;" onclick="openReportModal('${m.id}')">⚑ Report</button>`;
+  if(currentUser){
+    const canEdit=m.submitted_by_uid===currentUser.id||(!m.is_living&&m.submitted_by_uid===currentUser.id);
+    if(canEdit){
+      actions.innerHTML+=`<button class="btn btn-ghost" style="font-size:11px;padding:5px 11px;" onclick="openEditModal('${m.id}')">Request Edit</button>`;
+      actions.innerHTML+=`<button class="btn btn-danger" style="font-size:11px;padding:5px 11px;" onclick="openDeleteModal('${m.id}')">Request Removal</button>`;
+    }
+  }
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail(){document.getElementById('detail-panel').classList.remove('open');activeDetailId=null;}
+
+// ── Edit request ──
+const EDIT_FIELDS=[
+  {key:'full_name',label:'Full name',type:'text'},
+  {key:'nickname',label:'Nickname',type:'text'},
+  {key:'suffix',label:'Suffix',type:'text'},
+  {key:'birth_date',label:'Birth date',type:'date'},
+  {key:'death_date',label:'Death date',type:'date'},
+  {key:'birth_place',label:'Birthplace',type:'text'},
+  {key:'bio',label:'Bio',type:'textarea'},
+  {key:'photo_url',label:'Photo URL',type:'text'},
+  {key:'contact_email',label:'Contact email',type:'text'},
+  {key:'facebook_url',label:'Facebook URL',type:'text'},
+];
+function openEditModal(id){
+  const m=allMembers.find(x=>x.id===id); if(!m) return;
+  document.getElementById('edit-modal-sub').textContent=`Editing: ${m.full_name}${m.suffix?' '+m.suffix:''}`;
+  const c=document.getElementById('edit-fields'); c.innerHTML='';
+  document.getElementById('edit-conn-list').innerHTML='';
+  EDIT_FIELDS.forEach(f=>{
+    const d=document.createElement('div'); d.className='field'+(f.type==='textarea'?' span-2':'');
+    d.innerHTML=`<label>${f.label}</label>`;
+    let el; if(f.type==='textarea'){el=document.createElement('textarea');el.rows=3;}else{el=document.createElement('input');el.type=f.type;}
+    el.id='ef-'+f.key; el.value=m[f.key]||''; d.appendChild(el); c.appendChild(d);
+  });
+  document.getElementById('edit-modal').classList.add('open');
+}
+function addEditConn(){createConnRow('edit-conn-list',allMembers.filter(m=>!m.is_private));}
+async function submitEditRequest(){
+  if(!currentUser){showToast('Please sign in first','error');return;}
+  const m=allMembers.find(x=>x.id===activeDetailId); if(!m) return;
+  const changes={};
+  EDIT_FIELDS.forEach(f=>{
+    const nv=document.getElementById('ef-'+f.key)?.value?.trim()||null;
+    const ov=m[f.key]||null;
+    if(nv!==ov) changes[f.key]={old:ov,new:nv};
+  });
+  const conns=collectConnRows('edit-conn-list');
+  if(conns.length) changes._connections={old:[],new:conns};
+  if(!Object.keys(changes).length){showToast('No changes detected','info');return;}
+  const{error}=await db.from('member_requests').insert([{
+    request_type:'update',member_id:m.id,
+    requester_uid:currentUser.id,
+    requester_name:currentUser.user_metadata?.full_name||currentUser.email,
+    requester_email:currentUser.email,
+    proposed_changes:changes,
+  }]);
+  if(error){showToast('Error: '+error.message,'error');return;}
+  document.getElementById('edit-modal').classList.remove('open');
+  showToast('Edit request submitted','success');
+}
+
+function openDeleteModal(id){
+  const m=allMembers.find(x=>x.id===id); if(!m) return;
+  document.getElementById('delete-modal-sub').textContent=`Requesting removal of: ${m.full_name}`;
+  document.getElementById('delete-reason').value='';
+  document.getElementById('delete-modal').classList.add('open');
+}
+async function submitDeleteRequest(){
+  if(!currentUser){showToast('Please sign in first','error');return;}
+  const reason=document.getElementById('delete-reason').value.trim();
+  if(!reason){showToast('Please provide a reason','error');return;}
+  const m=allMembers.find(x=>x.id===activeDetailId); if(!m) return;
+  const{error}=await db.from('member_requests').insert([{
+    request_type:'delete',member_id:m.id,
+    requester_uid:currentUser.id,
+    requester_name:currentUser.user_metadata?.full_name||currentUser.email,
+    requester_email:currentUser.email,
+    proposed_changes:{reason},
+  }]);
+  if(error){showToast('Error: '+error.message,'error');return;}
+  document.getElementById('delete-modal').classList.remove('open');
+  showToast('Removal request submitted','success');
+}
+
+function openReportModal(id){
+  const m=allMembers.find(x=>x.id===id); if(!m) return;
+  document.getElementById('report-modal-sub').textContent=`Reporting: ${m.full_name}`;
+  document.getElementById('report-reason').value='';
+  document.getElementById('report-modal').classList.add('open');
+}
+async function submitReport(){
+  const reason=document.getElementById('report-reason').value.trim();
+  if(!reason){showToast('Please describe the issue','error');return;}
+  const m=allMembers.find(x=>x.id===activeDetailId); if(!m) return;
+  const{error}=await db.from('reports').insert([{member_id:m.id,reporter_uid:currentUser?.id||null,reporter_email:currentUser?.email||null,reason}]);
+  if(error){showToast('Error: '+error.message,'error');return;}
+  document.getElementById('report-modal').classList.remove('open');
+  showToast('Report submitted — thank you','success');
+}
+
+function zoomIn(){_scale=Math.min(2,_scale+.15);applyZoom();}
+function zoomOut(){_scale=Math.max(.25,_scale-.15);applyZoom();}
+function zoomReset(){_scale=1;applyZoom();}
+function applyZoom(){document.getElementById('tree-canvas').style.transform=`scale(${_scale})`;}
+
+init();
+</script>
+</body>
+</html>
