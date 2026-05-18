@@ -10,181 +10,110 @@
 <script src="shared.js"></script>
 <style>
   body { overflow-y:auto; }
-  .page-wrap { max-width:700px; margin:0 auto; padding:40px 22px 80px; flex:1; }
-  .page-intro { margin-bottom:32px; }
-  .page-intro h1 { font-family:'Playfair Display',serif; font-size:28px; color:var(--brown-dark); margin-bottom:8px; }
+  .page-wrap { max-width:680px; margin:0 auto; padding:38px 22px 80px; flex:1; }
+  .page-intro h1 { font-family:'Playfair Display',serif; font-size:27px; color:var(--brown-dark); margin-bottom:8px; }
   .page-intro p { font-size:14px; color:var(--text-light); line-height:1.7; }
-  .notice { margin-top:12px; padding:10px 14px; background:var(--green-pale); border-left:3px solid var(--green-mid); border-radius:0 4px 4px 0; font-size:13px; color:var(--green-deep); line-height:1.6; }
-
-  /* Auth / token gates */
-  .gate { min-height:55vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; }
-  .gate h2 { font-family:'Playfair Display',serif; font-size:24px; color:var(--brown-dark); }
-  .gate p { font-size:14px; color:var(--text-light); max-width:340px; line-height:1.7; }
-
-  /* Name match */
-  .match-notice { background:var(--pending-bg); border:1px solid var(--pending-border); border-radius:8px; padding:16px 18px; margin-bottom:22px; display:none; }
-  .match-notice-title { font-weight:700; font-size:13px; color:#92400e; margin-bottom:12px; }
-  .match-card { background:white; border:1px solid var(--border); border-radius:6px; padding:13px; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .notice { margin-top:11px; padding:10px 13px; background:var(--green-pale); border-left:3px solid var(--green-mid); border-radius:0 4px 4px 0; font-size:13px; color:var(--green-deep); line-height:1.6; }
+  .gate { min-height:55vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; text-align:center; }
+  .gate h2 { font-family:'Playfair Display',serif; font-size:23px; color:var(--brown-dark); }
+  .gate p { font-size:14px; color:var(--text-light); max-width:330px; line-height:1.7; }
+  .match-notice { background:var(--pending-bg); border:1px solid var(--pending-border); border-radius:8px; padding:15px 17px; margin-bottom:20px; display:none; }
+  .match-notice-title { font-weight:700; font-size:13px; color:#92400e; margin-bottom:11px; }
+  .match-card { background:white; border:1px solid var(--border); border-radius:6px; padding:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
   .match-card:last-child { margin-bottom:0; }
-  .match-card-info { flex:1; min-width:0; }
-  .match-card-name { font-weight:700; font-size:14px; color:var(--text-dark); }
-  .match-card-detail { font-size:12px; color:var(--text-light); margin-top:2px; line-height:1.4; }
-  .match-card-actions { display:flex; gap:7px; flex-shrink:0; }
-  .btn-yes { padding:6px 14px; background:var(--green-deep); color:white; border:none; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer; }
-  .btn-no { padding:6px 14px; background:white; color:var(--text-mid); border:1px solid var(--border); border-radius:4px; font-size:12px; font-weight:700; cursor:pointer; }
-
-  /* Update banner */
-  .update-banner { background:var(--green-pale); border:1px solid var(--green-mid); border-radius:6px; padding:11px 15px; margin-bottom:18px; font-size:13px; color:var(--green-deep); display:none; align-items:center; gap:10px; justify-content:space-between; }
+  .match-card-name { font-weight:700; font-size:13px; color:var(--text-dark); }
+  .match-card-detail { font-size:11px; color:var(--text-light); margin-top:2px; }
+  .match-card-actions { display:flex; gap:6px; flex-shrink:0; }
+  .btn-yes { padding:5px 13px; background:var(--green-deep); color:white; border:none; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; }
+  .btn-no { padding:5px 13px; background:white; color:var(--text-mid); border:1px solid var(--border); border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; }
+  .update-banner { background:var(--green-pale); border:1px solid var(--green-mid); border-radius:6px; padding:10px 14px; margin-bottom:16px; font-size:13px; color:var(--green-deep); display:none; align-items:center; gap:10px; justify-content:space-between; }
   .update-banner.visible { display:flex; }
-
-  /* Privacy box */
-  .privacy-box { background:var(--warm-white); border:1px solid var(--border); border-radius:6px; padding:15px; }
-  .privacy-box-title { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-light); margin-bottom:11px; }
+  .privacy-box { background:var(--warm-white); border:1px solid var(--border); border-radius:6px; padding:14px; }
+  .privacy-box-title { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-light); margin-bottom:10px; }
   .privacy-checks { display:flex; flex-direction:column; gap:9px; }
-
-  /* Form status */
-  .form-status { display:none; padding:12px 15px; border-radius:4px; font-size:13px; margin-top:14px; line-height:1.5; }
+  .form-status { display:none; padding:11px 14px; border-radius:4px; font-size:13px; margin-top:13px; }
   .form-status.error { display:block; background:#fef2f2; border:1px solid #fca5a5; color:var(--error); }
-
-  /* Success */
   .success-screen { display:none; text-align:center; padding:70px 24px; }
   .success-screen.visible { display:block; }
-  .success-icon { font-size:50px; margin-bottom:14px; }
-  .success-screen h2 { font-family:'Playfair Display',serif; font-size:26px; color:var(--brown-dark); margin-bottom:10px; }
-  .success-screen p { font-size:14px; color:var(--text-light); line-height:1.7; max-width:360px; margin:0 auto 22px; }
-
-  /* Banned */
-  .banned-screen { min-height:55vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; }
-  .banned-screen h2 { font-family:'Playfair Display',serif; font-size:22px; color:var(--error); }
-  .banned-screen p { font-size:14px; color:var(--text-light); max-width:320px; line-height:1.6; }
+  .success-icon { font-size:48px; margin-bottom:13px; }
+  .success-screen h2 { font-family:'Playfair Display',serif; font-size:25px; color:var(--brown-dark); margin-bottom:9px; }
+  .success-screen p { font-size:14px; color:var(--text-light); line-height:1.7; max-width:340px; margin:0 auto 20px; }
+  .banned-gate { min-height:55vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; }
+  .banned-gate h2 { font-family:'Playfair Display',serif; font-size:22px; color:var(--error); }
+  .banned-gate p { font-size:14px; color:var(--text-light); max-width:300px; line-height:1.6; }
 </style>
 </head>
 <body>
-
 <header class="site-header">
   <div class="logo-title" id="site-title"></div>
   <a href="index.html" class="btn btn-outline">← Back to Tree</a>
 </header>
-
-<div class="user-bar" id="user-bar" style="display:none"></div>
-
+<div class="user-bar" id="user-bar"></div>
 <div class="page-wrap">
-
-  <!-- Token gate (shown only to non-authenticated users with wrong/missing token) -->
   <div class="gate" id="token-gate" style="display:none">
-    <div style="font-size:48px">🔒</div>
+    <div style="font-size:46px">🔒</div>
     <h2>Invite only</h2>
-    <p>This form is only accessible via an invite link. Please contact the family admin to get access.</p>
+    <p>This form is only accessible via an invite link. Contact the family admin to get access.</p>
     <a href="index.html" class="btn btn-dark" style="margin-top:6px;">View the Tree</a>
   </div>
-
-  <!-- Auth gate (valid token, not signed in) -->
   <div class="gate" id="auth-gate" style="display:none">
-    <div style="font-size:48px">🌿</div>
+    <div style="font-size:46px">🌿</div>
     <h2>Sign in to continue</h2>
-    <p>Please sign in with your Google account. This helps us track who submits and edits entries.</p>
+    <p>Please sign in with your Google account so we can track who submits and edits entries.</p>
     <button class="btn-google" onclick="signInGoogle()">
       <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Continue with Google
     </button>
-    <p style="font-size:12px;color:var(--text-light);margin-top:4px;">Your Google account info will be visible to the family admin only.</p>
   </div>
-
-  <!-- Banned screen -->
-  <div class="banned-screen" id="banned-screen" style="display:none">
-    <div style="font-size:48px">🚫</div>
+  <div class="banned-gate" id="banned-gate" style="display:none">
+    <div style="font-size:46px">🚫</div>
     <h2>Account suspended</h2>
-    <p>Your account has been suspended by the family admin. Please contact them if you believe this is a mistake.</p>
+    <p>Your account has been suspended. Contact the family admin if you think this is a mistake.</p>
     <a href="index.html" class="btn btn-ghost" style="margin-top:6px;">View the Tree</a>
   </div>
-
-  <!-- Main form -->
   <div id="form-section" style="display:none">
-    <div class="page-intro">
+    <div class="page-intro" style="margin-bottom:28px;">
       <h1>Add yourself to the family tree</h1>
-      <p>Fill in as much or as little as you're comfortable sharing. Submissions are reviewed before appearing publicly.</p>
-      <div class="notice">Your submission won't appear until the admin approves it. Use the privacy options below to control what's visible.</div>
+      <p>Fill in what you're comfortable sharing. All submissions are reviewed before appearing publicly.</p>
+      <div class="notice">Your submission won't appear until approved. Use the privacy options to control what's visible.</div>
     </div>
-
     <div class="match-notice" id="match-notice">
-      <div class="match-notice-title">We found someone with this name in the tree. Is this you?</div>
+      <div class="match-notice-title">We found someone with this name. Is this you?</div>
       <div id="match-cards"></div>
-      <p style="margin-top:10px;font-size:12px;color:var(--text-light);">Not you? Continue filling the form to add yourself as a new person.</p>
+      <p style="margin-top:9px;font-size:12px;color:var(--text-light);">Not you? Continue the form to add yourself as a new person.</p>
     </div>
-
     <div class="update-banner" id="update-banner">
       <span>✓ Confirmed as <strong id="update-name"></strong> — submitting as an <strong>update request</strong>.</span>
-      <button class="btn btn-ghost" style="font-size:11px;padding:5px 11px;flex-shrink:0;" onclick="cancelUpdate()">Cancel</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0;" onclick="cancelUpdate()">Cancel</button>
     </div>
-
     <form id="submit-form" onsubmit="handleSubmit(event)">
-
       <div class="section">
         <div class="section-title">Personal Information</div>
         <div class="form-grid">
-          <div class="field">
-            <label>Full name <span class="req">*</span></label>
-            <input type="text" id="full_name" required placeholder="e.g. Maria Santos" oninput="debounceNameCheck()"/>
+          <div class="field"><label>Full name <span class="req">*</span></label><input type="text" id="full_name" required placeholder="e.g. Maria Santos" oninput="debounce()"/></div>
+          <div class="field"><label>Nickname <span class="opt">(optional)</span></label><input type="text" id="nickname" placeholder="e.g. Marites"/></div>
+          <div class="field"><label>Suffix <span class="opt">(optional)</span></label><input type="text" id="suffix" placeholder="Jr., Sr., III…"/></div>
+          <div class="field"><label>Gender <span class="opt">(optional)</span></label>
+            <select id="gender"><option value="">Prefer not to say</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select>
           </div>
-          <div class="field">
-            <label>Nickname <span class="opt">(optional)</span></label>
-            <input type="text" id="nickname" placeholder="e.g. Marites"/>
-          </div>
-          <div class="field">
-            <label>Suffix <span class="opt">(optional)</span></label>
-            <input type="text" id="suffix" placeholder="Jr., Sr., III…"/>
-          </div>
-          <div class="field">
-            <label>Gender <span class="opt">(optional)</span></label>
-            <select id="gender">
-              <option value="">Prefer not to say</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Birth date <span class="opt">(optional)</span></label>
-            <input type="date" id="birth_date"/>
-          </div>
-          <div class="field">
-            <label>Birthplace <span class="opt">(optional)</span></label>
-            <input type="text" id="birth_place" placeholder="City, Province"/>
-          </div>
-          <div class="field span-2">
-            <label>Bio <span class="opt">(optional)</span></label>
-            <textarea id="bio" placeholder="A short description about yourself…"></textarea>
-          </div>
-          <div class="field">
-            <label>Photo URL <span class="opt">(optional)</span></label>
-            <input type="text" id="photo_url" placeholder="https://…"/>
-            <div class="field-hint">Direct link to a photo (Imgur, etc.)</div>
-          </div>
-          <div class="field">
-            <label>Contact email <span class="opt">(shown on profile)</span></label>
-            <input type="text" id="contact_email" placeholder="visible on your card"/>
-          </div>
-          <div class="field span-2">
-            <label>Facebook profile URL <span class="opt">(optional)</span></label>
-            <input type="text" id="facebook_url" placeholder="https://facebook.com/yourprofile"/>
-          </div>
+          <div class="field"><label>Birth date <span class="opt">(optional)</span></label><input type="date" id="birth_date"/></div>
+          <div class="field"><label>Birthplace <span class="opt">(optional)</span></label><input type="text" id="birth_place" placeholder="City, Province"/></div>
+          <div class="field span-2"><label>Bio <span class="opt">(optional)</span></label><textarea id="bio" placeholder="A short description about yourself…"></textarea></div>
+          <div class="field"><label>Photo URL <span class="opt">(optional)</span></label><input type="text" id="photo_url" placeholder="https://…"/><div class="field-hint">Direct link to a photo (Imgur, etc.)</div></div>
+          <div class="field"><label>Contact email <span class="opt">(shown on profile)</span></label><input type="text" id="contact_email" placeholder="visible on your card"/></div>
+          <div class="field span-2"><label>Facebook URL <span class="opt">(optional)</span></label><input type="text" id="facebook_url" placeholder="https://facebook.com/yourprofile"/></div>
         </div>
       </div>
-
       <div class="section">
         <div class="section-title">If submitting on behalf of a deceased person</div>
         <div class="form-grid">
-          <div class="field">
-            <label>Death date <span class="opt">(leave blank if still living)</span></label>
-            <input type="date" id="death_date"/>
-          </div>
+          <div class="field"><label>Death date <span class="opt">(leave blank if still living)</span></label><input type="date" id="death_date"/></div>
         </div>
       </div>
-
       <div class="section">
         <div class="section-title">Privacy Settings</div>
         <div class="privacy-box">
-          <div class="privacy-box-title">Hide the following from the public tree</div>
+          <div class="privacy-box-title">Hide from the public tree</div>
           <div class="privacy-checks">
             <label class="check-row"><input type="checkbox" id="hide_birth_date"/> Hide my birth date</label>
             <label class="check-row"><input type="checkbox" id="hide_birth_place"/> Hide my birthplace</label>
@@ -194,234 +123,164 @@
           </div>
         </div>
       </div>
-
       <div class="section">
         <div class="section-title">Family Connections</div>
-        <p style="font-size:13px;color:var(--text-light);margin-bottom:14px;line-height:1.6;">
-          Only approved members in the tree can be selected. If someone isn't in the tree yet, add them first.
-        </p>
+        <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;line-height:1.6;">Only approved members can be selected. If someone isn't in the tree yet, they'll need to be added first.</p>
         <div id="conn-list"></div>
-        <button type="button" class="add-conn-btn" onclick="createConnRow('conn-list', approvedMembers)">+ Add a connection</button>
+        <button type="button" class="add-conn-btn" onclick="createConnRow('conn-list',approvedMembers)">+ Add a connection</button>
       </div>
-
       <div class="section">
         <div class="section-title">Notes for the admin</div>
-        <div class="field">
-          <textarea id="admin_notes" placeholder="Anything the admin should know…"></textarea>
-        </div>
+        <div class="field"><textarea id="admin_notes" placeholder="Anything the admin should know…"></textarea></div>
       </div>
-
       <div class="form-status" id="form-status"></div>
-
-      <div style="margin-top:24px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-        <button type="submit" class="btn btn-dark" id="submit-btn" style="padding:12px 30px;font-size:13px;">Submit for Review</button>
+      <div style="margin-top:22px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+        <button type="submit" class="btn btn-dark" id="submit-btn" style="padding:11px 28px;font-size:13px;">Submit for Review</button>
         <div style="font-size:11px;color:var(--text-light);">Reviewed by the admin before appearing on the tree.</div>
       </div>
     </form>
   </div>
-
   <div class="success-screen" id="success-screen">
     <div class="success-icon">🌿</div>
     <h2>Submission received!</h2>
-    <p>Thank you. The admin will review your submission and it'll appear once approved.</p>
+    <p>The admin will review your submission and it'll appear once approved.</p>
     <a href="index.html" class="btn btn-dark">View the Family Tree</a>
   </div>
-
 </div>
-
 <footer class="site-footer" id="site-footer"></footer>
 <div class="toast" id="toast"></div>
-
 <script>
-document.getElementById('site-title').textContent = SITE_CONFIG.familyName;
+document.getElementById('site-title').textContent=SITE_CONFIG.familyName;
 renderFooter();
+let currentUser=null, approvedMembers=[], updateTargetId=null, nameTimer=null;
 
-let currentUser = null;
-let approvedMembers = [];
-let updateTargetId = null;
-let nameCheckTimer = null;
-
-async function init() {
-  const urlToken = new URLSearchParams(location.search).get('token');
-  const { data: { session } } = await db.auth.getSession();
-  currentUser = session?.user || null;
-
-  // Authenticated users bypass token check
-  if (!currentUser) {
-    if (urlToken !== INVITE_TOKEN) {
-      document.getElementById('token-gate').style.display = 'flex';
-      return;
-    }
-    document.getElementById('auth-gate').style.display = 'flex';
-    return;
+async function init(){
+  const urlToken=new URLSearchParams(location.search).get('token');
+  const{data:{session}}=await db.auth.getSession();
+  currentUser=session?.user||null;
+  if(!currentUser){
+    if(urlToken!==INVITE_TOKEN){document.getElementById('token-gate').style.display='flex';return;}
+    document.getElementById('auth-gate').style.display='flex'; return;
   }
-
-  // Check if banned
-  const banned = await checkIfBanned(currentUser.id);
-  if (banned) {
-    renderUserBar(currentUser);
-    document.getElementById('banned-screen').style.display = 'flex';
-    return;
-  }
-
-  renderUserBar(currentUser);
-  await loadForm();
+  const banned=await checkIfBanned(currentUser.id);
+  if(banned){renderUserBar(currentUser);document.getElementById('banned-gate').style.display='flex';return;}
+  renderUserBar(currentUser); await loadForm();
 }
-
-async function signInGoogle() {
-  const urlToken = new URLSearchParams(location.search).get('token') || INVITE_TOKEN;
-  await db.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: SITE_CONFIG.siteURL + '/submit.html?token=' + urlToken }
-  });
+async function signInGoogle(){
+  const urlToken=new URLSearchParams(location.search).get('token')||INVITE_TOKEN;
+  await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:SITE_CONFIG.siteURL+'/submit.html?token='+urlToken}});
 }
-
-async function loadForm() {
-  const { data: members } = await db.from('family_members').select('*').eq('approved', true).eq('is_private', false);
-  approvedMembers = members || [];
-  const { data: rels } = await db.from('relationships').select('*').eq('approved', true);
-  window._allRelationships = rels || [];
-  document.getElementById('form-section').style.display = 'block';
+async function loadForm(){
+  const{data:m}=await db.from('family_members').select('*').eq('approved',true).eq('is_private',false);
+  approvedMembers=m||[];
+  document.getElementById('form-section').style.display='block';
 }
-
-// ── Name matching ──
-function debounceNameCheck() {
-  clearTimeout(nameCheckTimer);
-  nameCheckTimer = setTimeout(checkNameMatch, 600);
-}
-
-function checkNameMatch() {
-  if (updateTargetId) return;
-  const q = document.getElementById('full_name').value.trim().toLowerCase();
-  if (q.length < 3) { document.getElementById('match-notice').style.display='none'; return; }
-  const matches = approvedMembers.filter(m =>
-    (m.full_name||'').toLowerCase().includes(q) || q.includes((m.full_name||'').toLowerCase())
-  ).slice(0, 5);
-  if (!matches.length) { document.getElementById('match-notice').style.display='none'; return; }
-  const cards = document.getElementById('match-cards');
-  cards.innerHTML = '';
-  matches.forEach(m => {
-    const detail = memberDetail(m, approvedMembers);
-    const div = document.createElement('div');
-    div.className = 'match-card';
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-        ${avatarHTML(m, 36)}
-        <div class="match-card-info">
-          <div class="match-card-name">${escHtml(m.full_name)}${m.suffix?' '+escHtml(m.suffix):''}</div>
-          <div class="match-card-detail">${escHtml(detail)}</div>
-        </div>
-      </div>
-      <div class="match-card-actions">
-        <button class="btn-yes" onclick="confirmMatch('${m.id}')">Yes, that's me</button>
-        <button class="btn-no" onclick="document.getElementById('match-notice').style.display='none'">Not me</button>
-      </div>`;
+function debounce(){clearTimeout(nameTimer);nameTimer=setTimeout(checkMatch,600);}
+function checkMatch(){
+  if(updateTargetId) return;
+  const q=document.getElementById('full_name').value.trim().toLowerCase();
+  if(q.length<3){document.getElementById('match-notice').style.display='none';return;}
+  const hits=approvedMembers.filter(m=>(m.full_name||'').toLowerCase().includes(q)||q.includes((m.full_name||'').toLowerCase())).slice(0,5);
+  if(!hits.length){document.getElementById('match-notice').style.display='none';return;}
+  const cards=document.getElementById('match-cards'); cards.innerHTML='';
+  hits.forEach(m=>{
+    const detail=[!m.hide_birth_date&&m.birth_date?'Born '+formatDate(m.birth_date):null,!m.hide_birth_place&&m.birth_place?m.birth_place:null,!m.is_living?'Deceased':null].filter(Boolean).join(' · ')||'';
+    const div=document.createElement('div'); div.className='match-card';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:9px;flex:1;min-width:0;">
+      ${m.photo_url&&!m.hide_photo?`<img src="${escHtml(m.photo_url)}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'"/>`:`<div style="width:34px;height:34px;border-radius:50%;background:var(--brown-pale);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--brown-mid);flex-shrink:0;">${initials(m.full_name)}</div>`}
+      <div><div class="match-card-name">${escHtml(m.full_name)}${m.suffix?' '+escHtml(m.suffix):''}</div><div class="match-card-detail">${escHtml(detail)}</div></div>
+    </div>
+    <div class="match-card-actions">
+      <button class="btn-yes" onclick="confirmMatch('${m.id}')">Yes, that's me</button>
+      <button class="btn-no" onclick="document.getElementById('match-notice').style.display='none'">Not me</button>
+    </div>`;
     cards.appendChild(div);
   });
-  document.getElementById('match-notice').style.display = 'block';
+  document.getElementById('match-notice').style.display='block';
 }
-
-function confirmMatch(id) {
-  const m = approvedMembers.find(x => x.id === id);
-  if (!m) return;
-  updateTargetId = id;
-  document.getElementById('match-notice').style.display = 'none';
-  document.getElementById('update-name').textContent = m.full_name + (m.suffix?' '+m.suffix:'');
+function confirmMatch(id){
+  const m=approvedMembers.find(x=>x.id===id); if(!m) return;
+  updateTargetId=id;
+  document.getElementById('match-notice').style.display='none';
+  document.getElementById('update-name').textContent=m.full_name+(m.suffix?' '+m.suffix:'');
   document.getElementById('update-banner').classList.add('visible');
-  document.getElementById('submit-btn').textContent = 'Submit Update Request';
-  // Pre-fill
-  ['full_name','nickname','suffix','birth_place','bio','photo_url','contact_email','facebook_url'].forEach(f => {
-    const el = document.getElementById(f); if (el && m[f]) el.value = m[f];
-  });
-  if (m.birth_date) document.getElementById('birth_date').value = m.birth_date;
-  if (m.death_date) document.getElementById('death_date').value = m.death_date;
-  ['hide_birth_date','hide_birth_place','hide_bio','hide_photo','is_private'].forEach(f => {
-    document.getElementById(f).checked = !!m[f];
-  });
+  document.getElementById('submit-btn').textContent='Submit Update Request';
+  ['full_name','nickname','suffix','birth_place','bio','photo_url','contact_email','facebook_url'].forEach(f=>{const el=document.getElementById(f);if(el&&m[f])el.value=m[f];});
+  if(m.birth_date)document.getElementById('birth_date').value=m.birth_date;
+  if(m.death_date)document.getElementById('death_date').value=m.death_date;
+  ['hide_birth_date','hide_birth_place','hide_bio','hide_photo','is_private'].forEach(f=>{document.getElementById(f).checked=!!m[f];});
 }
-
-function cancelUpdate() {
-  updateTargetId = null;
-  document.getElementById('update-banner').classList.remove('visible');
-  document.getElementById('submit-btn').textContent = 'Submit for Review';
-}
-
-// ── Submit ──
-async function handleSubmit(e) {
+function cancelUpdate(){updateTargetId=null;document.getElementById('update-banner').classList.remove('visible');document.getElementById('submit-btn').textContent='Submit for Review';}
+async function handleSubmit(e){
   e.preventDefault();
-  const btn = document.getElementById('submit-btn');
-  const statusEl = document.getElementById('form-status');
-  btn.disabled = true; btn.textContent = 'Submitting…';
-  statusEl.className = 'form-status';
-
-  const deathDate = document.getElementById('death_date').value || null;
-  const payload = {
-    full_name: document.getElementById('full_name').value.trim(),
-    nickname: document.getElementById('nickname').value.trim() || null,
-    suffix: document.getElementById('suffix').value.trim() || null,
-    gender: document.getElementById('gender').value || null,
-    birth_date: document.getElementById('birth_date').value || null,
-    death_date: deathDate,
-    is_living: !deathDate,
-    birth_place: document.getElementById('birth_place').value.trim() || null,
-    bio: document.getElementById('bio').value.trim() || null,
-    photo_url: document.getElementById('photo_url').value.trim() || null,
-    contact_email: document.getElementById('contact_email').value.trim() || null,
-    facebook_url: document.getElementById('facebook_url').value.trim() || null,
-    hide_birth_date: document.getElementById('hide_birth_date').checked,
-    hide_birth_place: document.getElementById('hide_birth_place').checked,
-    hide_bio: document.getElementById('hide_bio').checked,
-    hide_photo: document.getElementById('hide_photo').checked,
-    is_private: document.getElementById('is_private').checked,
-    submitted_by_uid: currentUser.id,
-    submitted_by_name: currentUser.user_metadata?.full_name || currentUser.email,
-    submitted_by_email: currentUser.email,
-    notes: document.getElementById('admin_notes').value.trim() || null,
-    approved: false,
+  const btn=document.getElementById('submit-btn'),statusEl=document.getElementById('form-status');
+  btn.disabled=true; btn.textContent='Submitting…'; statusEl.className='form-status';
+  const deathDate=document.getElementById('death_date').value||null;
+  const payload={
+    full_name:document.getElementById('full_name').value.trim(),
+    nickname:document.getElementById('nickname').value.trim()||null,
+    suffix:document.getElementById('suffix').value.trim()||null,
+    gender:document.getElementById('gender').value||null,
+    birth_date:document.getElementById('birth_date').value||null,
+    death_date:deathDate, is_living:!deathDate,
+    birth_place:document.getElementById('birth_place').value.trim()||null,
+    bio:document.getElementById('bio').value.trim()||null,
+    photo_url:document.getElementById('photo_url').value.trim()||null,
+    contact_email:document.getElementById('contact_email').value.trim()||null,
+    facebook_url:document.getElementById('facebook_url').value.trim()||null,
+    hide_birth_date:document.getElementById('hide_birth_date').checked,
+    hide_birth_place:document.getElementById('hide_birth_place').checked,
+    hide_bio:document.getElementById('hide_bio').checked,
+    hide_photo:document.getElementById('hide_photo').checked,
+    is_private:document.getElementById('is_private').checked,
+    submitted_by_uid:currentUser.id,
+    submitted_by_name:currentUser.user_metadata?.full_name||currentUser.email,
+    submitted_by_email:currentUser.email,
+    notes:document.getElementById('admin_notes').value.trim()||null,
+    approved:false,
   };
-
-  const connections = collectConnRows('conn-list');
-
-  try {
-    if (updateTargetId) {
-      const existing = approvedMembers.find(x => x.id === updateTargetId);
-      const changes = {};
-      Object.entries(payload).forEach(([k,v]) => { if (existing && existing[k] !== v) changes[k] = { old: existing[k], new: v }; });
-      if (connections.length) changes._connections = { old: [], new: connections };
-      const { error } = await db.from('member_requests').insert([{
-        request_type: 'update', member_id: updateTargetId,
-        requester_uid: currentUser.id,
-        requester_name: currentUser.user_metadata?.full_name || currentUser.email,
-        requester_email: currentUser.email,
-        proposed_changes: changes,
-      }]);
-      if (error) throw error;
+  const conns=collectConnRows('conn-list');
+  try{
+    if(updateTargetId){
+      const ex=approvedMembers.find(x=>x.id===updateTargetId);
+      const changes={};
+      Object.entries(payload).forEach(([k,v])=>{if(ex&&ex[k]!==v)changes[k]={old:ex[k],new:v};});
+      if(conns.length) changes._connections={old:[],new:conns};
+      const{error}=await db.from('member_requests').insert([{request_type:'update',member_id:updateTargetId,requester_uid:currentUser.id,requester_name:currentUser.user_metadata?.full_name||currentUser.email,requester_email:currentUser.email,proposed_changes:changes}]);
+      if(error) throw error;
     } else {
-      const { data: inserted, error } = await db.from('family_members').insert([payload]).select();
-      if (error) throw error;
-      // Save connections
-      if (connections.length && inserted?.[0]?.id) {
-        const newId = inserted[0].id;
-        const relRows = connections.map(c => ({
-          person_a_id: ['child','niece_nephew','grandchild'].includes(c.type) ? newId : c.memberId,
-          person_b_id: ['child','niece_nephew','grandchild'].includes(c.type) ? c.memberId : newId,
-          relationship_type: c.type === 'child' ? 'parent' : c.type,
-          approved: false, is_visible: true,
-          is_biological: true,
-        }));
-        await db.from('relationships').insert(relRows);
+      const{data:ins,error}=await db.from('family_members').insert([payload]).select();
+      if(error) throw error;
+      if(conns.length&&ins?.[0]?.id){
+        const newId=ins[0].id;
+        const rows=conns.map(c=>{
+          const isChild=c.type==='child';
+          return{
+            person_a_id:isChild?newId:c.memberId,
+            person_b_id:isChild?c.memberId:newId,
+            relationship_type:isChild||c.type==='parent'?'parent':c.type,
+            is_biological:!c.adopted,
+            approved:false,is_visible:true,
+          };
+        });
+        // Spouse connections → marriages table
+        const spouseConns=conns.filter(c=>c.type==='spouse');
+        if(spouseConns.length){
+          const marRows=spouseConns.map(c=>({person1_id:newId,person2_id:c.memberId,status:'married',approved:false,is_visible:true}));
+          await db.from('marriages').insert(marRows);
+        }
+        const relRows=rows.filter(r=>r.relationship_type!=='spouse');
+        if(relRows.length) await db.from('relationships').insert(relRows);
       }
     }
-    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('form-section').style.display='none';
     document.getElementById('success-screen').classList.add('visible');
-  } catch(err) {
-    statusEl.className = 'form-status error';
-    statusEl.textContent = 'Something went wrong: ' + (err.message || 'Please try again.');
-    btn.disabled = false;
-    btn.textContent = updateTargetId ? 'Submit Update Request' : 'Submit for Review';
+  }catch(err){
+    statusEl.className='form-status error';
+    statusEl.textContent='Something went wrong: '+(err.message||'Please try again.');
+    btn.disabled=false; btn.textContent=updateTargetId?'Submit Update Request':'Submit for Review';
   }
 }
-
 init();
 </script>
 </body>
